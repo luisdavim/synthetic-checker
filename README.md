@@ -150,6 +150,12 @@ helm repo update
 helm upgrade --namespace monitoring --install kube-stack-prometheus prometheus-community/kube-prometheus-stack --set prometheus-node-exporter.hostRootFsMount.enabled=false --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false --set prometheus.prometheusSpec.probeSelectorNilUsesHelmValues=false --set prometheus.prometheusSpec.ruleSelectorNilUsesHelmValues=false --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false --set thanosRuler.thanosRulerSpec.ruleSelectorNilUsesHelmValues=false
 ```
 
+Update the synthetic-checker installation to include the Prometheus operator related resources:
+
+```sh
+helm upgrade --install -f helm/synthetic-checker/ci/with_checks.yaml -f helm/synthetic-checker/ci/with_prom_op.yaml synthetic-checker ./helm/synthetic-checker
+```
+
 Connecting to the Prometheus web UI:
 
 ```sh
