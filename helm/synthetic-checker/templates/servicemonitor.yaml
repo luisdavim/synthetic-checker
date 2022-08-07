@@ -1,0 +1,21 @@
+{{ if and .Values.prometheus.enabled .Values.prometheus.operator.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "synthetic-checker.fullname" . }}
+  labels:
+    {{- include "synthetic-checker.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "synthetic-checker.selectorLabels" . | nindent 6 }}
+  endpoints:
+  - interval: {{ .Values.prometheus.operator.serviceMonitor.interval }}
+  {{- with .Values.prometheus.operator.serviceMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ . }}
+  {{- end }}
+    port: http
+    path: /metrics
+  namespaceSelector:
+    any: true
+{{- end }}

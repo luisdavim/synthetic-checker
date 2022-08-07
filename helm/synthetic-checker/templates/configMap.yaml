@@ -1,0 +1,12 @@
+{{- if .Values.checks }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "synthetic-checker.fullname" . }}
+  labels:
+    {{- include "synthetic-checker.labels" . | nindent 4 }}
+data:
+  "checks.yaml": |
+    {{- toYaml .Values.checks | nindent 4 }}
+{{- end }}

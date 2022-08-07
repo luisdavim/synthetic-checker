@@ -1,0 +1,8 @@
+---
+httpChecks:
+  stat503:
+    url: https://httpstat.us/503
+    interval: 10s
+  stat200:
+    url: https://httpstat.us/200
+    interval: 15s
