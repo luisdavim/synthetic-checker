@@ -180,3 +180,5 @@ kubectl port-forward --namespace monitoring svc/kube-stack-prometheus-grafana 80
 Open your browser and go to http://localhost:8080 and fill in previous credentials
 
 A dashboard is included in the provided helm chart, search for "synthetic checks" in the Grafana UI.
+
+![dashboard](./imgs/dash.png)
