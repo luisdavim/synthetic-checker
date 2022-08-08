@@ -155,7 +155,7 @@ ifeq ($(EXPORT_RESULT), true)
 	GO111MODULE=off go get -u github.com/thomaspoignant/yamllint-checkstyle
 	$(eval OUTPUT_OPTIONS = | tee /dev/tty | yamllint-checkstyle > yamllint-checkstyle.xml)
 endif
-	yamllint -f parsable $(shell git ls-files '*.yml' '*.yaml') $(OUTPUT_OPTIONS)
+	yamllint -f parsable $(shell git ls-files '*.yml' '*.yaml' | grep -v "helm/$(PROJECTNAME)") $(OUTPUT_OPTIONS)
 
 lint-dockerfile: ## Lint your Dockerfile
 # If dockerfile is present we lint it.
@@ -166,7 +166,9 @@ ifeq ($(shell test -e ./Dockerfile && echo -n yes),yes)
 endif
 
 lint-shell: ## Lint all shell scripts
+ifneq ($(SHELLFILES),)
 	shellcheck $(SHELLFILES)
+endif
 
 lint-helm: ## Lint the helm chart
 ifeq ($(shell test -e ./helm/$(PROJECTNAME) && echo -n yes),yes)
