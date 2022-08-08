@@ -206,7 +206,7 @@ helm-test: k8s_schemas ## Test the helm chart
 		done
 
 helm-docs: ## Generate helm chart docs
-	helm-docs -o Values.md
+	helm-docs -o README.md
 
 ## Docker:
 docker-build: ## Use the dockerfile to build the container

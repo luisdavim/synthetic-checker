@@ -34,7 +34,7 @@ You can run the service locally with docker or using the built binary directly.
 
 ### Using go run
 
-The simplest way to start the service is throug the `go run` command:
+The simplest way to start the service is through the `go run` command:
 
 ```sh
 go run main.go
@@ -76,7 +76,7 @@ sample_external_url_up{name="stat503"} 0
 
 ### Using Docker
 
-You can run the service throug Docker with the following commands:
+You can run the service through Docker with the following commands:
 
 ```sh
 docker build --rm --tag synthetic-checker

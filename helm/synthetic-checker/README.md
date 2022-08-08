@@ -33,6 +33,7 @@ A Helm chart for Kubernetes
 | prometheus.enabled | bool | `true` |  |
 | prometheus.endpoint | string | `"metrics"` |  |
 | prometheus.operator.enabled | bool | `false` |  |
+| prometheus.operator.namespace | string | `"monitoring"` |  |
 | prometheus.operator.serviceMonitor.interval | string | `"15s"` |  |
 | prometheus.operator.serviceMonitor.scrapeTimeout | string | `"2s"` |  |
 | prometheus.port | int | `8080` |  |
