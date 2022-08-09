@@ -3,7 +3,7 @@ package checks
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -15,9 +15,8 @@ import (
 
 // httpCheck represents an http checker
 type httpCheck struct {
-	config         *config.HTTPCheck
-	client         *http.Client
-	successDetails string
+	config *config.HTTPCheck
+	client *http.Client
 }
 
 // ErrorUnexpectedStatus is returned when the service being checked returns an unexpected status code
@@ -62,7 +61,6 @@ func NewHTTPCheck(name string, config config.HTTPCheck) (api.Check, error) {
 		client: &http.Client{
 			Timeout: config.Timeout,
 		},
-		successDetails: fmt.Sprintf("URL [%s] is accessible", config.URL),
 	}
 	return check, nil
 }
@@ -88,7 +86,7 @@ func (c *httpCheck) Execute(ctx context.Context) (bool, error) {
 	}
 
 	if c.config.ExpectedBody != "" {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return false, fmt.Errorf("failed to read response body: %w", err)
 		}
