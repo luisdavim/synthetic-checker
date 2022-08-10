@@ -21,8 +21,9 @@ var (
 	}, []string{"name"})
 
 	checkDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "sample_external_url_response_ms",
-		Help: "Duration of the check",
+		Name:    "sample_external_url_response_ms",
+		Help:    "Duration of the check",
+		Buckets: []float64{5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000},
 	}, []string{"name"})
 )
 
