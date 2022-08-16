@@ -9,7 +9,7 @@ import (
 type Check interface {
 	// Checkers must implement an Execute function that runs the check and returns the status
 	Execute(ctx context.Context) (bool, error)
-	// Checkers must implement an Invoke function that indicates how often the check should run
+	// Checkers must implement an Interval function that indicates how often the check should run
 	Interval() time.Duration
 }
 

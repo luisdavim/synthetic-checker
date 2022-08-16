@@ -30,6 +30,17 @@ func (e ErrorUnexpectedStatus) Error() string {
 	return fmt.Sprintf("Unexpected status code: '%v' expected: '%v'", e.got, e.expected)
 }
 
+// ErrorUnexpectedBody is returned when the service being checked returns an unexpected body
+type ErrorUnexpectedBody struct {
+	expected string
+	got      string
+}
+
+// Error makes ErrorUnexpectedBody implement the error interface
+func (e ErrorUnexpectedBody) Error() string {
+	return fmt.Sprintf("body %q does not contain expected content %q", e.got, e.expected)
+}
+
 // NewHTTPCheck creates a new http check from the given configuration
 func NewHTTPCheck(name string, config config.HTTPCheck) (api.Check, error) {
 	if config.URL == "" {
@@ -92,7 +103,10 @@ func (c *httpCheck) Execute(ctx context.Context) (bool, error) {
 		}
 
 		if !strings.Contains(string(body), c.config.ExpectedBody) {
-			return false, fmt.Errorf("body does not contain expected content '%v'", c.config.ExpectedBody)
+			return false, ErrorUnexpectedBody{
+				got:      string(body),
+				expected: c.config.ExpectedBody,
+			}
 		}
 	}
 
@@ -113,7 +127,7 @@ func (c *httpCheck) do(ctx context.Context) (*http.Response, error) {
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute '%v' request: %w", c.config.Method, err)
+		return nil, fmt.Errorf("failed to execute %q request: %w", c.config.Method, err)
 	}
 
 	return resp, nil
