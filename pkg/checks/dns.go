@@ -51,5 +51,12 @@ func (c *dnsCheck) Execute(ctx context.Context) (bool, error) {
 	}
 
 	addrs, err := c.resolver.LookupHost(ctx, c.config.Host)
-	return (len(addrs) >= c.config.MinRequiredResults), err
+	if err != nil {
+		return false, err
+	}
+	ok := len(addrs) >= c.config.MinRequiredResults)
+	if !ok {
+		err = fmt.Errorf("insufficient number of results: %d < %d", len(addrs), c.config.MinRequiredResults)
+	}
+	return ok, err
 }

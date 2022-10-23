@@ -78,11 +78,11 @@ $ curl -s http://localhost:8080/ | jq .
 Or check the metrics endpoint:
 
 ```console
-$ curl -s http://localhost:8080/metrics | grep 'sample_external_url_up'
-# HELP sample_external_url_up Status from the check
-# TYPE sample_external_url_up gauge
-sample_external_url_up{name="stat200"} 1
-sample_external_url_up{name="stat503"} 0
+$ curl -s http://localhost:8080/metrics | grep 'check_status_up'
+# HELP check_status_up Status from the check
+# TYPE check_status_up gauge
+check_status_up{name="stat200"} 1
+check_status_up{name="stat503"} 0
 ```
 
 ### Using Docker
@@ -176,7 +176,7 @@ kubectl port-forward --namespace monitoring svc/kube-stack-prometheus-kube-prome
 Opening a browser tab on http://localhost:9090 shows the Prometheus web UI, the following URL will give you the status of your HTTP checks:
 
 ```text
-http://localhost:9090/graph?g0.expr=sample_external_url_up&g0.tab=0&g0.stacked=0&g0.show_exemplars=0&g0.range_input=1h
+http://localhost:9090/graph?g0.expr=check_status_up&g0.tab=0&g0.stacked=0&g0.show_exemplars=0&g0.range_input=1h
 ```
 
 Connecting To Grafana:

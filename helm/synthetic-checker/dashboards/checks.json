@@ -86,7 +86,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "1 - sample_external_url_up",
+          "expr": "1 - check_status_up",
           "legendFormat": "{{name}}",
           "range": true,
           "refId": "A"
@@ -174,7 +174,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum(rate(sample_external_url_response_ms_bucket[5m])) by (name,le))",
+          "expr": "histogram_quantile(0.95, sum(rate(check_duration_ms_bucket[5m])) by (name,le))",
           "refId": "A"
         }
       ],
@@ -261,7 +261,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sample_external_url_response_ms_sum / sample_external_url_response_ms_count",
+          "expr": "check_duration_ms_sum / check_duration_ms_count",
           "legendFormat": "{{name}}",
           "range": true,
           "refId": "A"

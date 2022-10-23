@@ -16,12 +16,12 @@ import (
 
 var (
 	checkStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "sample_external_url_up",
+		Name: "check_status_up",
 		Help: "Status from the check",
 	}, []string{"name"})
 
 	checkDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "sample_external_url_response_ms",
+		Name:    "check_duration_ms",
 		Help:    "Duration of the check",
 		Buckets: []float64{5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000},
 	}, []string{"name"})
@@ -119,9 +119,9 @@ func (runner *CheckRunner) Run() context.CancelFunc {
 func (runner *CheckRunner) check(ctx context.Context, name string, check api.Check) {
 	var err error
 	status, _ := runner.GetStatusFor(name)
+	status.Error = ""
 	status.Timestamp = time.Now()
 	status.OK, err = check.Execute(ctx)
-	status.Error = ""
 	if err != nil {
 		status.Error = err.Error()
 	}
@@ -137,6 +137,6 @@ func (runner *CheckRunner) check(ctx context.Context, name string, check api.Che
 		status.ContiguousFailures = 0
 		checkStatus.With(prometheus.Labels{"name": name}).Set(1)
 	}
-	runner.log.Info().Bool("healthy", status.OK).Msgf("Check status for %s", name)
+	runner.log.Err(err).Bool("healthy", status.OK).Msgf("Check status for %s", name)
 	runner.updateStatusFor(name, status)
 }
