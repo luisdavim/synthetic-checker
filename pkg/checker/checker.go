@@ -62,6 +62,15 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 		}
 	}
 
+	// setup K8s checks
+	for name, config := range cfg.K8sChecks {
+		var err error
+		runner.checks[name], err = checks.NewK8sCheck(name, config)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return runner, nil
 }
 

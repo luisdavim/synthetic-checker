@@ -10,3 +10,9 @@ dnsChecks:
   google:
     host: "www.google.com"
     interval: 15s
+k8sChecks:
+  coredns:
+    kind: "Deployment.v1.apps"
+    name: "coredns"
+    namespace: "kube-system"
+    interval: 20s

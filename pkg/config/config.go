@@ -7,6 +7,7 @@ import (
 type Config struct {
 	HTTPChecks map[string]HTTPCheck `mapstructure:"httpChecks"`
 	DNSChecks  map[string]DNSCheck  `mapstructure:"dnsChecks"`
+	K8sChecks  map[string]K8sCheck  `mapstructure:"k8sChecks"`
 }
 
 // HTTPCheck configures a check for the response from a given URL.
@@ -36,6 +37,19 @@ type DNSCheck struct {
 	Host string `mapstructure:"host,omitempty"`
 	// Minimum number of results the query must return, defaults to 1
 	MinRequiredResults int
+	// Timeout is the timeout used for the DNS request, defaults to "1s".
+	Timeout time.Duration `mapstructure:"timeout,omitempty"`
+	// Interval defines how often the check should be executed, defaults to 30 seconds.
+	Interval time.Duration `mapstructure:"interval,omitempty"`
+}
+
+type K8sCheck struct {
+	// Kind takes the common style of string which may be either `Kind.group.com` or `Kind.version.group.com`
+	Kind string `mapstructure:"kind,omitempty"`
+	// Namespace is the namespace where to look for the resource
+	Namespace string `mapstructure:"namespace,omitempty"`
+	// Name is the name of the resource
+	Name string `mapstructure:"name,omitempty"`
 	// Timeout is the timeout used for the DNS request, defaults to "1s".
 	Timeout time.Duration `mapstructure:"timeout,omitempty"`
 	// Interval defines how often the check should be executed, defaults to 30 seconds.
