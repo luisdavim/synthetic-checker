@@ -17,49 +17,43 @@ import (
 	"github.com/luisdavim/synthetic-checker/pkg/server"
 )
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
+func newCmd(cfg *config.Config, srvCfg *server.Config) *cobra.Command {
 	var (
-		cfgFile string
-		cfg     config.Config
+		failStatus     int
+		degradedStatus int
 	)
-
-	cobra.OnInitialize(func() {
-		// Get the configuration for the checks
-		var err error
-		cfg, err = initConfig(cfgFile)
-		if err != nil {
-			log.Println(err)
-			os.Exit(1)
-		}
-	})
-
 	// cmd represents the base command when called without any subcommands
 	cmd := &cobra.Command{
-		Use:   "synthetic-checker",
-		Short: "A brief description of your application",
-		Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+		Use:          "synthetic-checker",
+		Short:        "A service to run synthetic checks and report their results",
+		Long:         `A service to run synthetic checks and report their results.`,
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			chkr, err := checker.NewFromConfig(cfg)
+			chkr, err := checker.NewFromConfig(*cfg)
 			if err != nil {
 				return err
 			}
 			stop := chkr.Run() // Start the checker
-			var srvCfg server.Config
-			if err := server.ReadConfig(&srvCfg); err != nil {
-				log.Fatalf("error reading config: %v", err)
-			}
-			httpServer := server.New(srvCfg)
+			httpServer := server.New(*srvCfg)
 			routes := server.Routes{
 				"/": {
 					Func: func(w http.ResponseWriter, r *http.Request) {
-						httpServer.JSONResponse(w, r, chkr.GetStatus(), http.StatusOK)
+						statusCode := http.StatusOK
+						checkStatus := chkr.GetStatus()
+						if failStatus != http.StatusOK || degradedStatus != http.StatusOK {
+							allFailed := true
+							for _, res := range checkStatus {
+								if !res.OK {
+									statusCode = degradedStatus
+								} else {
+									allFailed = false
+								}
+							}
+							if allFailed {
+								statusCode = failStatus
+							}
+						}
+						httpServer.JSONResponse(w, r, checkStatus, statusCode)
 					},
 					Methods: []string{"GET"},
 					Name:    "status",
@@ -76,10 +70,38 @@ to quickly create a Cobra application.`,
 		},
 	}
 
+	cmd.Flags().IntVarP(&failStatus, "failed-status-code", "F", http.StatusOK, "HTTP status code to return when all checks are failed")
+	cmd.Flags().IntVarP(&degradedStatus, "degraded-status-code", "D", http.StatusOK, "HTTP status code to return when check check is failed")
+
+	return cmd
+}
+
+// Execute adds all child commands to the root command and sets flags appropriately.
+// This is called by main.main(). It only needs to happen once to the rootCmd.
+func Execute() {
+	var (
+		cfgFile string
+		cfg     config.Config
+		srvCfg  server.Config
+	)
+
+	cobra.OnInitialize(func() {
+		// Get the configuration for the checks
+		var err error
+		cfg, err = initConfig(cfgFile)
+		if err != nil {
+			log.Fatalf("error reading checks config:  %v", err)
+		}
+		if err := server.ReadConfig(&srvCfg); err != nil {
+			log.Fatalf("error reading server config: %v", err)
+		}
+	})
+
+	cmd := newCmd(&cfg, &srvCfg)
 	cmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.checks.yaml)")
 
 	if err := cmd.Execute(); err != nil {
-		os.Exit(1)
+		log.Fatalf("error:  %v", err)
 	}
 }
 

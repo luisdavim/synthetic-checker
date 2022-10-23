@@ -41,7 +41,11 @@ func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error) {
 	}
 
 	if k8sClient == nil {
-		if c, err := client.New(konfig.GetConfigOrDie(), client.Options{}); err != nil {
+		kfg, err := konfig.GetConfig()
+		if err != nil {
+			return nil, err
+		}
+		if c, err := client.New(kfg, client.Options{}); err != nil {
 			return nil, fmt.Errorf("failed to create client: %w", err)
 		} else {
 			k8sClient = &c
