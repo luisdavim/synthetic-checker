@@ -47,7 +47,7 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 	// setup HTTP checks
 	for name, config := range cfg.HTTPChecks {
 		var err error
-		runner.checks[name], err = checks.NewHTTPCheck(name, config)
+		runner.checks[name+"-http"], err = checks.NewHTTPCheck(name, config)
 		if err != nil {
 			return nil, err
 		}
@@ -56,7 +56,7 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 	// setup DNS checks
 	for name, config := range cfg.DNSChecks {
 		var err error
-		runner.checks[name], err = checks.NewDNSCheck(name, config)
+		runner.checks[name+"-dns"], err = checks.NewDNSCheck(name, config)
 		if err != nil {
 			return nil, err
 		}
@@ -65,7 +65,7 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 	// setup K8s checks
 	for name, config := range cfg.K8sChecks {
 		var err error
-		runner.checks[name], err = checks.NewK8sCheck(name, config)
+		runner.checks[name+"-k8s"], err = checks.NewK8sCheck(name, config)
 		if err != nil {
 			return nil, err
 		}
