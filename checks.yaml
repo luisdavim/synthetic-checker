@@ -16,3 +16,8 @@ k8sChecks:
     name: "coredns"
     namespace: "kube-system"
     interval: 20s
+  calico-node:
+    kind: "DaemonSet.v1.apps"
+    namespace: "kube-system"
+    name: "calico-node"
+    interval: 25s
