@@ -1,7 +1,8 @@
 # Synthetic Checker
 
 The synthetic checker is a tool to run synthetic checks and track their statusses.
-For now the tool only supports HTTP checks but more types of checks can be added in the future.
+For now the tool supports HTTP and DNS checks but more types of checks can be added in the future.
+Checks are executed periodically and asynchronously in the background.
 
 To make development easier, a [Makefile](./Makefile) is provided, run `make` with no arguments to get a list of all available options.
 

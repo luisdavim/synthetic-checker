@@ -44,9 +44,19 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 		log:    zerolog.New(os.Stderr).With().Timestamp().Str("name", "checkerLogger").Logger().Level(zerolog.InfoLevel),
 	}
 
+	// setup HTTP checks
 	for name, config := range cfg.HTTPChecks {
 		var err error
 		runner.checks[name], err = checks.NewHTTPCheck(name, config)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// setup DNS checks
+	for name, config := range cfg.DNSChecks {
+		var err error
+		runner.checks[name], err = checks.NewDNSCheck(name, config)
 		if err != nil {
 			return nil, err
 		}

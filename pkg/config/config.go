@@ -6,6 +6,7 @@ import (
 
 type Config struct {
 	HTTPChecks map[string]HTTPCheck `mapstructure:"httpChecks"`
+	DNSChecks  map[string]DNSCheck  `mapstructure:"dnsChecks"`
 }
 
 // HTTPCheck configures a check for the response from a given URL.
@@ -26,6 +27,17 @@ type HTTPCheck struct {
 	Timeout time.Duration `mapstructure:"timeout,omitempty"`
 	// Headers to set on the request
 	Headers map[string]string `mapstructure:"headers,omitempty"`
+	// Interval defines how often the check should be executed, defaults to 30 seconds.
+	Interval time.Duration `mapstructure:"interval,omitempty"`
+}
+
+type DNSCheck struct {
+	// DNS name to check
+	Host string `mapstructure:"host,omitempty"`
+	// Minimum number of results the query must return, defaults to 1
+	MinRequiredResults int
+	// Timeout is the timeout used for the DNS request, defaults to "1s".
+	Timeout time.Duration `mapstructure:"timeout,omitempty"`
 	// Interval defines how often the check should be executed, defaults to 30 seconds.
 	Interval time.Duration `mapstructure:"interval,omitempty"`
 }
