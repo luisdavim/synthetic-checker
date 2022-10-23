@@ -27,6 +27,16 @@ httpChecks:
   stat200:
     url: https://httpstat.us/200
     interval: 15s
+dnsChecks:
+  google:
+    host: "www.google.com"
+    interval: 15s
+k8sChecks:
+  coredns:
+    kind: "Deployment.v1.apps"
+    name: "coredns"
+    namespace: "kube-system"
+    interval: 20s
 ```
 
 ## Running the service
