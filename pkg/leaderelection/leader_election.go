@@ -38,11 +38,16 @@ func getInClusterNamespace() (string, error) {
 	return string(namespace), nil
 }
 
-func NewResourceLock(id string) (resourcelock.Interface, error) {
-	namespace, err := getInClusterNamespace()
-	if err != nil {
-		// namespace = "default"
-		return nil, err
+func NewResourceLock(id, namespace string) (resourcelock.Interface, error) {
+	if id == "" {
+		id = os.Getenv("POD_NAME")
+	}
+	if namespace == "" {
+		var err error
+		namespace, err = getInClusterNamespace()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	config, err := konfig.GetConfig()
@@ -78,9 +83,8 @@ type LeaderElector struct {
 	logger zerolog.Logger
 }
 
-func NewLeaderElector() (*LeaderElector, error) {
-	id := os.Getenv("POD_NAME")
-	lock, err := NewResourceLock(id)
+func NewLeaderElector(id, namespace string) (*LeaderElector, error) {
+	lock, err := NewResourceLock(id, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +115,7 @@ func (l *LeaderElector) RunLeaderElection(ctx context.Context, run func(context.
 			},
 			OnNewLeader: func(currentID string) {
 				l.logger.Info().Msgf("new leader is %s", currentID)
-				l.Leader = currentID
-				if l.ID == currentID {
+				if l.ID == currentID && l.Leader != "" {
 					done <- struct{}{} // stop the sync
 				} else {
 					go func() {
@@ -127,6 +130,7 @@ func (l *LeaderElector) RunLeaderElection(ctx context.Context, run func(context.
 						}
 					}()
 				}
+				l.Leader = currentID
 			},
 		},
 	})

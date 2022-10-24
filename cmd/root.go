@@ -60,7 +60,7 @@ func newCmd(cfg *config.Config, srvCfg *server.Config) *cobra.Command {
 			srv := server.New(*srvCfg)
 
 			if haMode {
-				le, err := leaderelection.NewLeaderElector()
+				le, err := leaderelection.NewLeaderElector("", "")
 				if err != nil {
 					return err
 				}

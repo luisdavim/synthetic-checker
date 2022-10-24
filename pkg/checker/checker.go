@@ -121,6 +121,7 @@ func (runner *CheckRunner) RunWithContext(ctx context.Context) {
 	}
 }
 
+// Sync fetches the state from the leader
 func (runner *CheckRunner) Sync(leader string) {
 	res, err := http.Get("http://" + leader + ":8080/")
 	if err != nil {
