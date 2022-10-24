@@ -45,6 +45,8 @@ func newCmd(cfg *config.Config, srvCfg *server.Config) *cobra.Command {
 		failStatus     int
 		degradedStatus int
 		haMode         bool
+		leID           string
+		leNs           string
 	)
 	// cmd represents the base command when called without any subcommands
 	cmd := &cobra.Command{
@@ -60,7 +62,7 @@ func newCmd(cfg *config.Config, srvCfg *server.Config) *cobra.Command {
 			srv := server.New(*srvCfg)
 
 			if haMode {
-				le, err := leaderelection.NewLeaderElector("", "")
+				le, err := leaderelection.NewLeaderElector(leID, leNs)
 				if err != nil {
 					return err
 				}
@@ -93,6 +95,8 @@ func newCmd(cfg *config.Config, srvCfg *server.Config) *cobra.Command {
 	cmd.Flags().IntVarP(&failStatus, "failed-status-code", "F", http.StatusOK, "HTTP status code to return when all checks are failed")
 	cmd.Flags().IntVarP(&degradedStatus, "degraded-status-code", "D", http.StatusOK, "HTTP status code to return when check check is failed")
 	cmd.Flags().BoolVarP(&haMode, "k8s-leader-election", "", false, "Enable leader election, only works when running in k8s")
+	cmd.Flags().StringVarP(&leID, "leader-election-id", "", "", "set the leader election ID, defaults to POD_NAME or hostname")
+	cmd.Flags().StringVarP(&leNs, "leader-election-ns", "", "", "set the leader election namespace, defaults to the current namespace")
 
 	return cmd
 }

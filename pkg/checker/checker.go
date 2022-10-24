@@ -139,6 +139,7 @@ func (runner *CheckRunner) Sync(leader string) {
 	for name, result := range status {
 		runner.updateStatusFor(name, result)
 	}
+	runner.log.Info().Msg("synced data from leader")
 }
 
 // check executes one check and stores the resulting status

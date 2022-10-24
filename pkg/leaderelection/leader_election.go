@@ -38,18 +38,7 @@ func getInClusterNamespace() (string, error) {
 	return string(namespace), nil
 }
 
-func NewResourceLock(id, namespace string) (resourcelock.Interface, error) {
-	if id == "" {
-		id = os.Getenv("POD_NAME")
-	}
-	if namespace == "" {
-		var err error
-		namespace, err = getInClusterNamespace()
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func newResourceLock(id, namespace string) (resourcelock.Interface, error) {
 	config, err := konfig.GetConfig()
 	if err != nil {
 		return nil, err
@@ -84,7 +73,24 @@ type LeaderElector struct {
 }
 
 func NewLeaderElector(id, namespace string) (*LeaderElector, error) {
-	lock, err := NewResourceLock(id, namespace)
+	if id == "" {
+		id = os.Getenv("POD_NAME")
+	}
+	if id == "" {
+		var err error
+		id, err = os.Hostname()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if namespace == "" {
+		var err error
+		namespace, err = getInClusterNamespace()
+		if err != nil {
+			return nil, err
+		}
+	}
+	lock, err := newResourceLock(id, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +112,7 @@ func (l *LeaderElector) RunLeaderElection(ctx context.Context, run func(context.
 		RetryPeriod:     2 * time.Second,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(c context.Context) {
-				l.logger.Info().Msg("I'm the leader")
+				l.logger.Info().Msg("starting main loop")
 				run(c)
 			},
 			OnStoppedLeading: func() {
@@ -114,10 +120,15 @@ func (l *LeaderElector) RunLeaderElection(ctx context.Context, run func(context.
 				os.Exit(1) // TODO: is this overkill?
 			},
 			OnNewLeader: func(currentID string) {
-				l.logger.Info().Msgf("new leader is %s", currentID)
-				if l.ID == currentID && l.Leader != "" {
-					done <- struct{}{} // stop the sync
+				l.logger.Info().Msgf("new leader is %s, I am %s", currentID, l.ID)
+				if l.ID == currentID {
+					l.logger.Info().Msg("I am the leader")
+					if l.Leader != "" { // if the sync never started, no need to stop it
+						l.logger.Info().Msg("stopping sync loop")
+						done <- struct{}{} // stop the sync
+					}
 				} else {
+					l.logger.Info().Msg("starting sync loop")
 					go func() {
 						for {
 							select {
