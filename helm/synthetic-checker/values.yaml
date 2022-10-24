@@ -13,6 +13,10 @@ checks:
   #     url: https://httpstat.us/200
   #     interval: 15s
 
+statusCodes:
+  failed: 200
+  degraded: 200
+
 replicaCount: 1
 
 image:

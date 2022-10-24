@@ -12,7 +12,10 @@ import (
 	"github.com/luisdavim/synthetic-checker/pkg/config"
 )
 
-var checkName string = "test"
+var (
+	checkName     string = "test"
+	httpCheckName string = "test-http"
+)
 
 func TestChecker(t *testing.T) {
 	tests := []struct {
@@ -74,8 +77,8 @@ func TestChecker(t *testing.T) {
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
-			c.check(context.TODO(), checkName, c.checks[checkName])
-			actual := c.status[checkName]
+			c.check(context.TODO(), httpCheckName, c.checks[httpCheckName])
+			actual := c.status[httpCheckName]
 			if actual.OK != tt.expected.OK {
 				t.Errorf("unexpected status, wanted: %t, got: %t", tt.expected.OK, actual.OK)
 			}

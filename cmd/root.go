@@ -17,6 +17,27 @@ import (
 	"github.com/luisdavim/synthetic-checker/pkg/server"
 )
 
+func statusHandler(chkr *checker.CheckRunner, srv *server.Server, failStatus, degradedStatus int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		statusCode := http.StatusOK
+		checkStatus := chkr.GetStatus()
+		if failStatus != http.StatusOK || degradedStatus != http.StatusOK {
+			allFailed := true
+			for _, res := range checkStatus {
+				if !res.OK {
+					statusCode = degradedStatus
+				} else {
+					allFailed = false
+				}
+			}
+			if allFailed {
+				statusCode = failStatus
+			}
+		}
+		srv.JSONResponse(w, r, checkStatus, statusCode)
+	}
+}
+
 func newCmd(cfg *config.Config, srvCfg *server.Config) *cobra.Command {
 	var (
 		failStatus     int
@@ -34,38 +55,21 @@ func newCmd(cfg *config.Config, srvCfg *server.Config) *cobra.Command {
 				return err
 			}
 			stop := chkr.Run() // Start the checker
-			httpServer := server.New(*srvCfg)
+			srv := server.New(*srvCfg)
 			routes := server.Routes{
 				"/": {
-					Func: func(w http.ResponseWriter, r *http.Request) {
-						statusCode := http.StatusOK
-						checkStatus := chkr.GetStatus()
-						if failStatus != http.StatusOK || degradedStatus != http.StatusOK {
-							allFailed := true
-							for _, res := range checkStatus {
-								if !res.OK {
-									statusCode = degradedStatus
-								} else {
-									allFailed = false
-								}
-							}
-							if allFailed {
-								statusCode = failStatus
-							}
-						}
-						httpServer.JSONResponse(w, r, checkStatus, statusCode)
-					},
+					Func:    statusHandler(chkr, srv, failStatus, degradedStatus),
 					Methods: []string{"GET"},
 					Name:    "status",
 				},
 			}
-			httpServer.WithShutdownFunc(func() error {
+			srv.WithShutdownFunc(func() error {
 				// ensure the checker routines are stopped
 				stop()
 				return nil
 			})
-			httpServer.WithRoutes(routes) // Register Routes
-			httpServer.Run()              // Start Server
+			srv.WithRoutes(routes) // Register Routes
+			srv.Run()              // Start Server
 			return nil
 		},
 	}
