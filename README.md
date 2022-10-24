@@ -26,6 +26,7 @@ Flags:
   -D, --degraded-status-code int   HTTP status code to return when check check is failed (default 200)
   -F, --failed-status-code int     HTTP status code to return when all checks are failed (default 200)
   -h, --help                       help for synthetic-checker
+      --k8s-leader-election        Enable leader election, only works when running in k8s
   -K, --keyFile string             File containing the x509 private key for HTTPS.
   -P, --pass string                Set BasicAuth password for the http listener
   -p, --port int                   Port for the http listener (default 8080)

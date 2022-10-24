@@ -36,6 +36,9 @@ spec:
           args:
             - -F {{ .Values.statusCodes.failed }}
             - -D {{ .Values.statusCodes.degraded }}
+          {{- if (gt (int .Values.replicaCount) 1) }}
+            - --k8s-leader-election
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.containerPort }}

@@ -2,6 +2,8 @@ package checker
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -97,6 +99,11 @@ func (runner *CheckRunner) updateStatusFor(name string, r api.Status) {
 // Run schedules all the checks, running them periodically in the background, according to their configuration
 func (runner *CheckRunner) Run() context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
+	runner.RunWithContext(ctx)
+	return cancel
+}
+
+func (runner *CheckRunner) RunWithContext(ctx context.Context) {
 	for name, check := range runner.checks {
 		go func(name string, check api.Check) {
 			ticker := time.NewTicker(check.Interval())
@@ -112,7 +119,25 @@ func (runner *CheckRunner) Run() context.CancelFunc {
 			}
 		}(name, check)
 	}
-	return cancel
+}
+
+func (runner *CheckRunner) Sync(leader string) {
+	res, err := http.Get("http://" + leader + ":8080/")
+	if err != nil {
+		runner.log.Err(err).Msg("failed to sync")
+		return
+	}
+	defer res.Body.Close()
+	status := make(map[string]api.Status)
+	err = json.NewDecoder(res.Body).Decode(&status)
+	if err != nil {
+		runner.log.Err(err).Msg("failed to sync")
+		return
+	}
+
+	for name, result := range status {
+		runner.updateStatusFor(name, result)
+	}
 }
 
 // check executes one check and stores the resulting status

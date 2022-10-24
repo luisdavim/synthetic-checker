@@ -4,6 +4,7 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/luisdavim/synthetic-checker/pkg/checker"
 	"github.com/luisdavim/synthetic-checker/pkg/config"
+	"github.com/luisdavim/synthetic-checker/pkg/leaderelection"
 	"github.com/luisdavim/synthetic-checker/pkg/server"
 )
 
@@ -42,6 +44,7 @@ func newCmd(cfg *config.Config, srvCfg *server.Config) *cobra.Command {
 	var (
 		failStatus     int
 		degradedStatus int
+		haMode         bool
 	)
 	// cmd represents the base command when called without any subcommands
 	cmd := &cobra.Command{
@@ -54,8 +57,26 @@ func newCmd(cfg *config.Config, srvCfg *server.Config) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			stop := chkr.Run() // Start the checker
 			srv := server.New(*srvCfg)
+
+			if haMode {
+				le, err := leaderelection.NewLeaderElector()
+				if err != nil {
+					return err
+				}
+				go le.RunLeaderElection(context.Background(), func(ctx context.Context) {
+					chkr.RunWithContext(ctx)
+					<-ctx.Done() // hold the routine, RunWithContext goes into the background
+				}, chkr.Sync)
+			} else {
+				stop := chkr.Run() // Start the checker
+				srv.WithShutdownFunc(func() error {
+					// ensure the checker routines are stopped
+					stop()
+					return nil
+				})
+			}
+
 			routes := server.Routes{
 				"/": {
 					Func:    statusHandler(chkr, srv, failStatus, degradedStatus),
@@ -63,11 +84,6 @@ func newCmd(cfg *config.Config, srvCfg *server.Config) *cobra.Command {
 					Name:    "status",
 				},
 			}
-			srv.WithShutdownFunc(func() error {
-				// ensure the checker routines are stopped
-				stop()
-				return nil
-			})
 			srv.WithRoutes(routes) // Register Routes
 			srv.Run()              // Start Server
 			return nil
@@ -76,6 +92,7 @@ func newCmd(cfg *config.Config, srvCfg *server.Config) *cobra.Command {
 
 	cmd.Flags().IntVarP(&failStatus, "failed-status-code", "F", http.StatusOK, "HTTP status code to return when all checks are failed")
 	cmd.Flags().IntVarP(&degradedStatus, "degraded-status-code", "D", http.StatusOK, "HTTP status code to return when check check is failed")
+	cmd.Flags().BoolVarP(&haMode, "k8s-leader-election", "", false, "Enable leader election, only works when running in k8s")
 
 	return cmd
 }
