@@ -8,6 +8,34 @@ To make development easier, a [Makefile](./Makefile) is provided, run `make` wit
 
 To run all the linters, tests and build a binary, run `make build`
 
+## Usage
+
+Check the `--help` flag to see all available options:
+
+```console
+$ go run main.go --help
+A service to run synthetic checks and report their results.
+
+Usage:
+  synthetic-checker [flags]
+
+Flags:
+  -C, --certFile string            File containing the x509 Certificate for HTTPS.
+  -c, --config string              config file (default is $HOME/.checks.yaml)
+  -d, --debug                      Set log level to debug
+  -D, --degraded-status-code int   HTTP status code to return when check check is failed (default 200)
+  -F, --failed-status-code int     HTTP status code to return when all checks are failed (default 200)
+  -h, --help                       help for synthetic-checker
+  -K, --keyFile string             File containing the x509 private key for HTTPS.
+  -P, --pass string                Set BasicAuth password for the http listener
+  -p, --port int                   Port for the http listener (default 8080)
+      --pretty-json                Pretty print JSON responses
+  -l, --request-limit int          Max requests per second per client allowed
+  -s, --securePort int             Port for the HTTPS listener (default 8443)
+  -S, --strip-slashes              Strip trailing slashes befofore matching routes
+  -U, --user string                Set BasicAuth user for the http listener
+```
+
 ## Configuration
 
 By default the tool will look for a configuration file in one of the following locations:
@@ -58,14 +86,14 @@ Check the global status of all checks:
 ```console
 $ curl -s http://localhost:8080/ | jq .
 {
-  "stat200": {
+  "stat200-http": {
     "ok": true,
     "timestamp": "2022-08-07T15:30:45.035296+01:00",
     "duration": 438158210,
     "contiguousFailures": 0,
     "timeOfFirstFailure": "0001-01-01T00:00:00Z"
   },
-  "stat503": {
+  "stat503-http": {
     "error": "Unexpected status code: '503' expected: '200'",
     "timestamp": "2022-08-07T15:30:50.033884+01:00",
     "duration": 420079871,
