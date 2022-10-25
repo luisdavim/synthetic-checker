@@ -11,6 +11,8 @@ type Check interface {
 	Execute(ctx context.Context) (bool, error)
 	// Checkers must implement an Interval function that indicates how often the check should run
 	Interval() time.Duration
+	// Checkers must implement an InitialDelay function that indicates how long to delay the start
+	InitialDelay() time.Duration
 }
 
 // Status represents the state of what is being checked

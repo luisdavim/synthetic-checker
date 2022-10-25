@@ -106,6 +106,8 @@ func (runner *CheckRunner) Run() context.CancelFunc {
 func (runner *CheckRunner) RunWithContext(ctx context.Context) {
 	for name, check := range runner.checks {
 		go func(name string, check api.Check) {
+			time.Sleep(check.InitialDelay())
+			runner.check(ctx, name, check)
 			ticker := time.NewTicker(check.Interval())
 			for {
 				select {

@@ -63,6 +63,11 @@ func (c *k8sCheck) Interval() time.Duration {
 	return c.config.Interval
 }
 
+// InitialDelay indicates how long to delay the check start
+func (c *k8sCheck) InitialDelay() time.Duration {
+	return c.config.InitialDelay
+}
+
 // Interval indicates how often the check should be performed
 func (c *k8sCheck) Execute(ctx context.Context) (bool, error) {
 	u := &unstructured.Unstructured{}

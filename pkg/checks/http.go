@@ -81,6 +81,11 @@ func (c *httpCheck) Interval() time.Duration {
 	return c.config.Interval
 }
 
+// InitialDelay indicates how long to delay the check start
+func (c *httpCheck) InitialDelay() time.Duration {
+	return c.config.InitialDelay
+}
+
 // Execute performs the check
 func (c *httpCheck) Execute(ctx context.Context) (bool, error) {
 	resp, err := c.do(ctx)

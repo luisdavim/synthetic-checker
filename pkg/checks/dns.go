@@ -44,6 +44,11 @@ func (c *dnsCheck) Interval() time.Duration {
 	return c.config.Interval
 }
 
+// InitialDelay indicates how long to delay the check start
+func (c *dnsCheck) InitialDelay() time.Duration {
+	return c.config.InitialDelay
+}
+
 // Execute performs the check
 func (c *dnsCheck) Execute(ctx context.Context) (bool, error) {
 	if c.resolver == nil {

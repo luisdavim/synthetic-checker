@@ -10,6 +10,16 @@ type Config struct {
 	K8sChecks  map[string]K8sCheck  `mapstructure:"k8sChecks"`
 }
 
+// BaseCheck holds the common properties across checks
+type BaseCheck struct {
+	// Timeout is the timeout used for the check duration, defaults to "1s".
+	Timeout time.Duration `mapstructure:"timeout,omitempty"`
+	// Interval defines how often the check should be executed, defaults to 30 seconds.
+	Interval time.Duration `mapstructure:"interval,omitempty"`
+	// InitialDelay defines a time to wait for before starting the check
+	InitialDelay time.Duration `mapstructure:"initialDelay,omitempty"`
+}
+
 // HTTPCheck configures a check for the response from a given URL.
 // The only required field is `URL`, which must be a valid URL.
 type HTTPCheck struct {
@@ -18,18 +28,15 @@ type HTTPCheck struct {
 	// Method is the HTTP method to use for this check.
 	// Method is optional and defaults to `GET` if undefined.
 	Method string `mapstructure:"method,omitempty"`
+	// Headers to set on the request
+	Headers map[string]string `mapstructure:"headers,omitempty"`
 	// Body is an optional request body to be posted to the target URL.
 	Body string `mapstructure:"body,omitempty"`
 	// ExpectedStatus is the expected response status code, defaults to `200`.
 	ExpectedStatus int `mapstructure:"expectedStatus,omitempty"`
 	// ExpectedBody is optional; if defined, makes the check fail if the response body does not match
 	ExpectedBody string `mapstructure:"expectedBody,omitempty"`
-	// Timeout is the timeout used for the HTTP request, defaults to "1s".
-	Timeout time.Duration `mapstructure:"timeout,omitempty"`
-	// Headers to set on the request
-	Headers map[string]string `mapstructure:"headers,omitempty"`
-	// Interval defines how often the check should be executed, defaults to 30 seconds.
-	Interval time.Duration `mapstructure:"interval,omitempty"`
+	BaseCheck
 }
 
 type DNSCheck struct {
@@ -37,10 +44,7 @@ type DNSCheck struct {
 	Host string `mapstructure:"host,omitempty"`
 	// Minimum number of results the query must return, defaults to 1
 	MinRequiredResults int
-	// Timeout is the timeout used for the DNS request, defaults to "1s".
-	Timeout time.Duration `mapstructure:"timeout,omitempty"`
-	// Interval defines how often the check should be executed, defaults to 30 seconds.
-	Interval time.Duration `mapstructure:"interval,omitempty"`
+	BaseCheck
 }
 
 type K8sCheck struct {
@@ -50,8 +54,5 @@ type K8sCheck struct {
 	Namespace string `mapstructure:"namespace,omitempty"`
 	// Name is the name of the resource
 	Name string `mapstructure:"name,omitempty"`
-	// Timeout is the timeout used for the DNS request, defaults to "1s".
-	Timeout time.Duration `mapstructure:"timeout,omitempty"`
-	// Interval defines how often the check should be executed, defaults to 30 seconds.
-	Interval time.Duration `mapstructure:"interval,omitempty"`
+	BaseCheck
 }
