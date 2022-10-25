@@ -17,7 +17,9 @@ statusCodes:
   failed: 200
   degraded: 200
 
+# set replicaCount > 1 and k8sLeaderElection to true to enable leader/follower HA mode
 replicaCount: 1
+k8sLeaderElection: false
 
 image:
   repository: synthetic-checker

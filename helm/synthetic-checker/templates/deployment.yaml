@@ -36,7 +36,7 @@ spec:
           args:
             - -F {{ .Values.statusCodes.failed }}
             - -D {{ .Values.statusCodes.degraded }}
-          {{- if (gt (int .Values.replicaCount) 1) }}
+          {{- if and (gt (int .Values.replicaCount) 1) .Values.k8sLeaderElection }}
             - --k8s-leader-election
           {{- end }}
           ports:
