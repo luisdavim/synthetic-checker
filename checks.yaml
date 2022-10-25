@@ -5,7 +5,8 @@ httpChecks:
     interval: 10s
   stat200:
     url: https://httpstat.us/200
-    interval: 15s
+    interval: 10s
+    initialDelay: 2s
 dnsChecks:
   google:
     host: "www.google.com"

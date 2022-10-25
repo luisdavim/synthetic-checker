@@ -55,7 +55,8 @@ httpChecks:
     interval: 10s
   stat200:
     url: https://httpstat.us/200
-    interval: 15s
+    interval: 10s
+    initialDelay: 2s
 dnsChecks:
   google:
     host: "www.google.com"
@@ -144,6 +145,15 @@ And deploy the service using the following command:
 ```sh
 helm upgrade --install -n <target_namespace> -f <path/to/your/custom_values.yaml> synthetic-checker ./helm/synthetic-checker
 ```
+
+#### HA modes
+
+When running in Kubernetes, you have 2 options for running in HA mode.
+
+- Running multiple independent instances, where each will execute its own checks
+  To use this mode set the `replicaCount` to any number higher than 1
+- Running multiple instances with leader election, were the leader will execute the checks and the followers will sync the results from it.
+  To use this mode set the `replicaCount` to any number higher than 1 and `k8sLeaderElection` to `true`
 
 ### In local Kubernetes using colima
 
