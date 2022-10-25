@@ -94,6 +94,22 @@ func (runner *CheckRunner) updateStatusFor(name string, r api.Status) {
 	runner.Lock()
 	runner.status[name] = r
 	runner.Unlock()
+	runner.updateMetricsFor(name)
+}
+
+// updateMetricsFor generates Prometheus metrics from the status of the given check
+func (runner *CheckRunner) updateMetricsFor(name string) {
+	status, ok := runner.GetStatusFor(name)
+	if !ok {
+		runner.log.Warn().Str("name", name).Msg("status not found")
+		return
+	}
+	checkDuration.With(prometheus.Labels{"name": name}).Observe(float64(status.Duration.Milliseconds()))
+	if status.OK {
+		checkStatus.With(prometheus.Labels{"name": name}).Set(1)
+	} else {
+		checkStatus.With(prometheus.Labels{"name": name}).Set(0)
+	}
 }
 
 // Run schedules all the checks, running them periodically in the background, according to their configuration
@@ -114,7 +130,7 @@ func (runner *CheckRunner) RunWithContext(ctx context.Context) {
 				case <-ticker.C:
 					runner.check(ctx, name, check)
 				case <-ctx.Done():
-					runner.log.Info().Msgf("Stopping %s checks", name)
+					runner.log.Info().Str("name", name).Msg("stopping checks")
 					ticker.Stop()
 					return
 				}
@@ -155,17 +171,14 @@ func (runner *CheckRunner) check(ctx context.Context, name string, check api.Che
 		status.Error = err.Error()
 	}
 	status.Duration = time.Since(status.Timestamp)
-	checkDuration.With(prometheus.Labels{"name": name}).Observe(float64(status.Duration.Milliseconds()))
 	if !status.OK {
 		if status.ContiguousFailures == 0 {
 			status.TimeOfFirstFailure = status.Timestamp
 		}
 		status.ContiguousFailures++
-		checkStatus.With(prometheus.Labels{"name": name}).Set(0)
 	} else {
 		status.ContiguousFailures = 0
-		checkStatus.With(prometheus.Labels{"name": name}).Set(1)
 	}
-	runner.log.Err(err).Bool("healthy", status.OK).Msgf("Check status for %s", name)
+	runner.log.Err(err).Bool("healthy", status.OK).Str("name", name).Msg("check status")
 	runner.updateStatusFor(name, status)
 }
