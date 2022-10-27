@@ -62,11 +62,26 @@ dnsChecks:
     host: "www.google.com"
     interval: 15s
 k8sChecks:
-  coredns:
+  coredns: # a specific deployment
     kind: "Deployment.v1.apps"
     name: "coredns"
     namespace: "kube-system"
     interval: 20s
+  nodes: # all the nodes
+    kind: "Node.v1"
+    interval: 30s
+    initialDelay: 3s
+  kube-api: # pods by label and namespace
+    kind: "Pod.v1"
+    namespace: "kube-system"
+    labelSelector: "k8s-app=kube-apiserver"
+    interval: 30s
+    initialDelay: 4s
+  monitoring-deployments: # all deployments in a namespace
+    kind: "Deployment.v1.apps"
+    namespace: "monitoring"
+    interval: 30s
+    initialDelay: 2s
 ```
 
 ## Running the service
