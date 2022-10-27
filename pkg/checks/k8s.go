@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"sigs.k8s.io/cli-utils/pkg/kstatus/status"
@@ -32,12 +34,6 @@ func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error) {
 	}
 	if config.Timeout == 0 {
 		config.Timeout = time.Second
-	}
-	if config.Name == "" {
-		return nil, fmt.Errorf("resource name must not be empty")
-	}
-	if config.Namespace == "" {
-		config.Namespace = "default"
 	}
 
 	if k8sClient == nil {
@@ -70,27 +66,75 @@ func (c *k8sCheck) InitialDelay() time.Duration {
 
 // Interval indicates how often the check should be performed
 func (c *k8sCheck) Execute(ctx context.Context) (bool, error) {
-	u := &unstructured.Unstructured{}
-	gvk, _ := schema.ParseKindArg(c.config.Kind)
-	u.SetGroupVersionKind(schema.GroupVersionKind{
+	ul := &unstructured.UnstructuredList{}
+	gvk, gk := schema.ParseKindArg(c.config.Kind)
+	if gvk == nil {
+		gvk = &schema.GroupVersionKind{
+			Version: gk.Group,
+			Kind:    gk.Kind,
+		}
+	}
+	ul.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   gvk.Group,
-		Kind:    gvk.Kind,
+		Kind:    gvk.Kind + "List", // TODO: is there a better way?
 		Version: gvk.Version,
 	})
-	if err := c.client.Get(context.Background(), client.ObjectKey{
-		Namespace: c.config.Namespace,
-		Name:      c.config.Name,
-	}, u); err != nil {
-		return false, fmt.Errorf("failed to get: %w", err)
+	if c.config.Name != "" {
+		u := unstructured.Unstructured{}
+		u.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   gvk.Group,
+			Kind:    gvk.Kind,
+			Version: gvk.Version,
+		})
+		if err := c.client.Get(context.Background(), client.ObjectKey{
+			Namespace: c.config.Namespace,
+			Name:      c.config.Name,
+		}, &u); err != nil {
+			return false, fmt.Errorf("failed to get: %w", err)
+		}
+		ul.Items = append(ul.Items, u)
+	} else {
+		opts := &client.ListOptions{
+			Namespace: c.config.Namespace,
+		}
+		if c.config.LabelSelector != "" {
+			var err error
+			opts.LabelSelector, err = labels.Parse(c.config.LabelSelector)
+			if err != nil {
+				return false, fmt.Errorf("invalid label selector")
+			}
+		}
+		if c.config.FieldSelector != "" {
+			var err error
+			opts.FieldSelector, err = fields.ParseSelector(c.config.LabelSelector)
+			if err != nil {
+				return false, fmt.Errorf("invalid field selector")
+			}
+		}
+		if err := c.client.List(ctx, ul, opts); err != nil {
+			return false, fmt.Errorf("failed to list: %w", err)
+		}
 	}
 
-	res, err := status.Compute(u)
-	if err != nil {
-		return false, err
+	allOK := true
+	var errs []error
+	for _, u := range ul.Items {
+		res, err := status.Compute(&u)
+		if err != nil {
+			allOK = false
+			errs = append(errs, err)
+			continue
+		}
+		ok := res.Status == status.CurrentStatus
+		if !ok {
+			allOK = false
+			errs = append(errs, fmt.Errorf("%s: wrong resource state: %s - %s", u.GetName(), res.Status, res.Message))
+		}
 	}
-	ok := res.Status == status.CurrentStatus
-	if !ok {
-		err = fmt.Errorf("wrong resource state: %s - %s", res.Status, res.Message)
+
+	var err error
+	for _, e := range errs {
+		err = fmt.Errorf("got error: %w", e)
 	}
-	return ok, err
+	return allOK, err
 }

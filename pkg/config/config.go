@@ -54,5 +54,9 @@ type K8sCheck struct {
 	Namespace string `mapstructure:"namespace,omitempty"`
 	// Name is the name of the resource
 	Name string `mapstructure:"name,omitempty"`
+	// LabelSelector comma separated list of key=value labels
+	LabelSelector string `mapstructure:"labelSelector,omitempty"`
+	// FieldSelector comma separated list of key=value fields
+	FieldSelector string `mapstructure:"fieldSelector,omitempty"`
 	BaseCheck
 }

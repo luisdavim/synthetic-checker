@@ -22,3 +22,24 @@ k8sChecks:
     namespace: "kube-system"
     name: "calico-node"
     interval: 25s
+    initialDelay: 1s
+  kube-system-deployments:
+    kind: "Deployment.v1.apps"
+    namespace: "kube-system"
+    interval: 30s
+    initialDelay: 2s
+  monitoring-deployments:
+    kind: "Deployment.v1.apps"
+    namespace: "monitoring"
+    interval: 30s
+    initialDelay: 2s
+  nodes:
+    kind: "Node.v1"
+    interval: 30s
+    initialDelay: 3s
+  kube-api:
+    kind: "Pod.v1"
+    namespace: "kube-system"
+    labelSelector: "k8s-app=kube-apiserver"
+    interval: 30s
+    initialDelay: 4s
