@@ -133,8 +133,10 @@ func (c *k8sCheck) Execute(ctx context.Context) (bool, error) {
 	}
 
 	var err error
+	resCount := len(ul.Items)
+	errCount := len(errs)
 	for _, e := range errs {
-		err = fmt.Errorf("got error: %w", e)
+		err = fmt.Errorf("%d of %d resources are not ok: %w", errCount, resCount, e)
 	}
 	return allOK, err
 }
