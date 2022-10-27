@@ -225,3 +225,6 @@ gomarkdoc: ## Use gomarkdoc to generate documentation for eval package
 
 changelog: ## Generate changelog file
 	git-chglog --no-case -o $(CHANGELOG_FILE) --next-tag $(NEXT_VERSION)
+
+codestats: ## Display code statistics
+	tokei --hidden
