@@ -66,6 +66,40 @@ func (c *k8sCheck) InitialDelay() time.Duration {
 
 // Interval indicates how often the check should be performed
 func (c *k8sCheck) Execute(ctx context.Context) (bool, error) {
+	ul, err := c.do(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	resCount := len(ul.Items)
+	if resCount == 0 {
+		return false, fmt.Errorf("no resources found")
+	}
+
+	allOK := true
+	var errs []error
+	for _, u := range ul.Items {
+		res, err := status.Compute(&u)
+		if err != nil {
+			allOK = false
+			errs = append(errs, err)
+			continue
+		}
+		ok := res.Status == status.CurrentStatus
+		if !ok {
+			allOK = false
+			errs = append(errs, fmt.Errorf("%s: wrong resource state: %s - %s", u.GetName(), res.Status, res.Message))
+		}
+	}
+
+	errCount := len(errs)
+	for _, e := range errs {
+		err = fmt.Errorf("%d of %d resources are not ok: %w", errCount, resCount, e)
+	}
+	return allOK, err
+}
+
+func (c *k8sCheck) do(ctx context.Context) (*unstructured.UnstructuredList, error) {
 	ul := &unstructured.UnstructuredList{}
 	gvk, gk := schema.ParseKindArg(c.config.Kind)
 	if gvk == nil {
@@ -90,7 +124,7 @@ func (c *k8sCheck) Execute(ctx context.Context) (bool, error) {
 			Namespace: c.config.Namespace,
 			Name:      c.config.Name,
 		}, &u); err != nil {
-			return false, fmt.Errorf("failed to get: %w", err)
+			return nil, fmt.Errorf("failed to get: %w", err)
 		}
 		ul.Items = append(ul.Items, u)
 	} else {
@@ -101,42 +135,20 @@ func (c *k8sCheck) Execute(ctx context.Context) (bool, error) {
 			var err error
 			opts.LabelSelector, err = labels.Parse(c.config.LabelSelector)
 			if err != nil {
-				return false, fmt.Errorf("invalid label selector")
+				return nil, fmt.Errorf("invalid label selector")
 			}
 		}
 		if c.config.FieldSelector != "" {
 			var err error
 			opts.FieldSelector, err = fields.ParseSelector(c.config.LabelSelector)
 			if err != nil {
-				return false, fmt.Errorf("invalid field selector")
+				return nil, fmt.Errorf("invalid field selector")
 			}
 		}
 		if err := c.client.List(ctx, ul, opts); err != nil {
-			return false, fmt.Errorf("failed to list: %w", err)
+			return nil, fmt.Errorf("failed to list: %w", err)
 		}
 	}
 
-	allOK := true
-	var errs []error
-	for _, u := range ul.Items {
-		res, err := status.Compute(&u)
-		if err != nil {
-			allOK = false
-			errs = append(errs, err)
-			continue
-		}
-		ok := res.Status == status.CurrentStatus
-		if !ok {
-			allOK = false
-			errs = append(errs, fmt.Errorf("%s: wrong resource state: %s - %s", u.GetName(), res.Status, res.Message))
-		}
-	}
-
-	var err error
-	resCount := len(ul.Items)
-	errCount := len(errs)
-	for _, e := range errs {
-		err = fmt.Errorf("%d of %d resources are not ok: %w", errCount, resCount, e)
-	}
-	return allOK, err
+	return ul, nil
 }
