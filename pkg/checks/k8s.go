@@ -105,17 +105,20 @@ func (c *k8sCheck) do(ctx context.Context) (*unstructured.UnstructuredList, erro
 	ul := &unstructured.UnstructuredList{}
 	gvk, gk := schema.ParseKindArg(c.config.Kind)
 	if gvk == nil {
+		// this looks strange but it should make sense if you read the ParseKindArg docs
 		gvk = &schema.GroupVersionKind{
-			Version: gk.Group,
 			Kind:    gk.Kind,
+			Version: gk.Group,
 		}
 	}
 	ul.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   gvk.Group,
-		Kind:    gvk.Kind + "List", // TODO: is there a better way?
 		Version: gvk.Version,
+		Kind:    gvk.Kind + "List", // TODO: is there a better way?
 	})
+
 	if c.config.Name != "" {
+		// fetching a single resource by name
 		u := unstructured.Unstructured{}
 		u.SetGroupVersionKind(schema.GroupVersionKind{
 			Group:   gvk.Group,
@@ -129,27 +132,28 @@ func (c *k8sCheck) do(ctx context.Context) (*unstructured.UnstructuredList, erro
 			return nil, fmt.Errorf("failed to get: %w", err)
 		}
 		ul.Items = append(ul.Items, u)
-	} else {
-		opts := &client.ListOptions{
-			Namespace: c.config.Namespace,
+		return ul, nil
+	}
+
+	opts := &client.ListOptions{
+		Namespace: c.config.Namespace,
+	}
+	if c.config.LabelSelector != "" {
+		var err error
+		opts.LabelSelector, err = labels.Parse(c.config.LabelSelector)
+		if err != nil {
+			return nil, fmt.Errorf("invalid label selector")
 		}
-		if c.config.LabelSelector != "" {
-			var err error
-			opts.LabelSelector, err = labels.Parse(c.config.LabelSelector)
-			if err != nil {
-				return nil, fmt.Errorf("invalid label selector")
-			}
+	}
+	if c.config.FieldSelector != "" {
+		var err error
+		opts.FieldSelector, err = fields.ParseSelector(c.config.LabelSelector)
+		if err != nil {
+			return nil, fmt.Errorf("invalid field selector")
 		}
-		if c.config.FieldSelector != "" {
-			var err error
-			opts.FieldSelector, err = fields.ParseSelector(c.config.LabelSelector)
-			if err != nil {
-				return nil, fmt.Errorf("invalid field selector")
-			}
-		}
-		if err := c.client.List(ctx, ul, opts); err != nil {
-			return nil, fmt.Errorf("failed to list: %w", err)
-		}
+	}
+	if err := c.client.List(ctx, ul, opts); err != nil {
+		return nil, fmt.Errorf("failed to list: %w", err)
 	}
 
 	return ul, nil
