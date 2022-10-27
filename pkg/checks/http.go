@@ -13,6 +13,8 @@ import (
 	"github.com/luisdavim/synthetic-checker/pkg/config"
 )
 
+var _ api.Check = &httpCheck{}
+
 // httpCheck represents an http checker
 type httpCheck struct {
 	config *config.HTTPCheck

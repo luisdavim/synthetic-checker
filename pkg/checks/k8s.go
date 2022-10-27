@@ -18,12 +18,14 @@ import (
 	"github.com/luisdavim/synthetic-checker/pkg/config"
 )
 
+var _ api.Check = &k8sCheck{}
+
 type k8sCheck struct {
 	config *config.K8sCheck
-	client client.Client
+	client client.Reader
 }
 
-var k8sClient *client.Client
+var k8sClient client.Reader
 
 func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error) {
 	if name == "" {
@@ -44,13 +46,13 @@ func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error) {
 		if c, err := client.New(kfg, client.Options{}); err != nil {
 			return nil, fmt.Errorf("failed to create client: %w", err)
 		} else {
-			k8sClient = &c
+			k8sClient = c
 		}
 	}
 
 	return &k8sCheck{
 		config: &config,
-		client: *k8sClient,
+		client: k8sClient,
 	}, nil
 }
 

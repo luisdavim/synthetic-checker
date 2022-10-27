@@ -10,6 +10,8 @@ import (
 	"github.com/luisdavim/synthetic-checker/pkg/config"
 )
 
+var _ api.Check = &dnsCheck{}
+
 type dnsCheck struct {
 	config   *config.DNSCheck
 	resolver *net.Resolver
