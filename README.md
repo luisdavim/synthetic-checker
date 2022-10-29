@@ -20,7 +20,9 @@ To run all the linters, tests and build a binary, run `make build`
 
 This tool can be used either as a cli to run the checks once and get the results printed out.
 Or as a service that periodically runs the checks and exposes the results through an API endpoint.
+When running in service mode, the tool also exposes metrics in the Prometheus format under the `/metrics` endpoint.
 When running in the cli mode, the checks are stil executed in parallel and the configured `initialDelay` is stil used.
+The cli mode can be used to run as an `init` container or as an `helm` pre or post hook as a pre-flight check or a post run validation.
 
 Check the `--help` flag on each sub-command to see all available options:
 
@@ -206,12 +208,12 @@ helm upgrade --install -n <target_namespace> -f <path/to/your/custom_values.yaml
 
 When running in Kubernetes, you have 2 options for running in HA mode.
 
-- Running multiple independent instances, where each will execute its own checks
+- Running multiple independent instances, where each will execute its own checks.
   To use this mode set the `replicaCount` to any number higher than 1
 - Running multiple instances with leader election, were the leader will execute the checks and the followers will sync the results from it.
   To use this mode set the `replicaCount` to any number higher than 1 and `k8sLeaderElection` to `true`
 
-### In local Kubernetes using colima
+### In local Kubernetes using helm and colima
 
 If you don't have `colima` installed, have a look at [colima's GitHub page](https://github.com/abiosoft/colima)
 
