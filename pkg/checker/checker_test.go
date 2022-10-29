@@ -12,10 +12,7 @@ import (
 	"github.com/luisdavim/synthetic-checker/pkg/config"
 )
 
-var (
-	checkName     string = "test"
-	httpCheckName string = "test-http"
-)
+var checkName string = "test"
 
 func TestChecker(t *testing.T) {
 	tests := []struct {
@@ -61,6 +58,46 @@ func TestChecker(t *testing.T) {
 				ContiguousFailures: 1,
 			},
 		},
+		{
+			name: "DNS OK",
+			config: config.Config{
+				DNSChecks: map[string]config.DNSCheck{
+					checkName: {
+						Host: "www.google.com",
+					},
+				},
+			},
+			expected: api.Status{
+				OK: true,
+			},
+		},
+		{
+			name: "multiple OK",
+			config: config.Config{
+				DNSChecks: map[string]config.DNSCheck{
+					checkName: {
+						Host: "www.google.com",
+					},
+				},
+				HTTPChecks: map[string]config.HTTPCheck{
+					checkName: {
+						URL:    "http://fake.com/ok",
+						Method: http.MethodGet,
+					},
+				},
+				ConnChecks: map[string]config.ConnCheck{
+					checkName: {
+						Address: "www.google.com:443",
+					},
+				},
+			},
+			response: http.Response{
+				StatusCode: 200,
+			},
+			expected: api.Status{
+				OK: true,
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -77,16 +114,21 @@ func TestChecker(t *testing.T) {
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
-			c.check(context.TODO(), httpCheckName, c.checks[httpCheckName])
-			actual := c.status[httpCheckName]
-			if actual.OK != tt.expected.OK {
-				t.Errorf("unexpected status, wanted: %t, got: %t", tt.expected.OK, actual.OK)
-			}
-			if actual.Error != tt.expected.Error {
-				t.Errorf("unexpected error, wanted: %s, got: %s", tt.expected.Error, actual.Error)
-			}
-			if actual.ContiguousFailures != tt.expected.ContiguousFailures {
-				t.Errorf("unexpected number of contiguous failures, wanted: %d, got: %d", tt.expected.ContiguousFailures, actual.ContiguousFailures)
+			for name := range c.checks {
+				c.check(context.TODO(), name, c.checks[name])
+				actual, ok := c.GetStatusFor(name)
+				if !ok {
+					t.Errorf("missing status for %s", name)
+				}
+				if actual.OK != tt.expected.OK {
+					t.Errorf("unexpected status, wanted: %t, got: %t", tt.expected.OK, actual.OK)
+				}
+				if actual.Error != tt.expected.Error {
+					t.Errorf("unexpected error, wanted: %s, got: %s", tt.expected.Error, actual.Error)
+				}
+				if actual.ContiguousFailures != tt.expected.ContiguousFailures {
+					t.Errorf("unexpected number of contiguous failures, wanted: %d, got: %d", tt.expected.ContiguousFailures, actual.ContiguousFailures)
+				}
 			}
 		})
 	}

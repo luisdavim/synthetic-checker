@@ -1,7 +1,16 @@
 # Synthetic Checker
 
 The synthetic checker is a tool to run synthetic checks and track their statusses.
-For now the tool supports HTTP, DNS and Kubernetes checks but more types of checks can be added in the future.
+The tool supports the following types of checks:
+
+- HTTP
+- gRPC
+- DNS
+- Connection
+- Kubernetes
+
+More types of checks can be added in the future.
+
 Checks are executed periodically and asynchronously in the background.
 
 To make development easier, a [Makefile](./Makefile) is provided, run `make` with no arguments to get a list of all available options.
@@ -153,7 +162,7 @@ make docker-release # add -e DOCKER_REGISTRY="my.reg.com" to override Docker reg
 ```
 
 Create a helm values file with your configuration overrides, you can see an example in [helm/synthetic-checker/ci/with_checks.yaml](./helm/synthetic-checker/ci/with_checks.yaml),
-Or have a look at  the default [values](./helm/synthetic-checker/values.yaml) to see all the available options.
+Or have a look at the default [values](./helm/synthetic-checker/values.yaml) to see all the available options.
 
 And deploy the service using the following command:
 

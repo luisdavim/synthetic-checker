@@ -73,6 +73,24 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 		}
 	}
 
+	// setup conn checks
+	for name, config := range cfg.ConnChecks {
+		var err error
+		runner.checks[name+"-conn"], err = checks.NewConnCheck(name, config)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// setup gRPC checks
+	for name, config := range cfg.GRPCChecks {
+		var err error
+		runner.checks[name+"-grpc"], err = checks.NewGrpcCheck(name, config)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return runner, nil
 }
 

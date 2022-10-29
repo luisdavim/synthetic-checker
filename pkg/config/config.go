@@ -2,12 +2,16 @@ package config
 
 import (
 	"time"
+
+	"google.golang.org/grpc/metadata"
 )
 
 type Config struct {
 	HTTPChecks map[string]HTTPCheck `mapstructure:"httpChecks"`
 	DNSChecks  map[string]DNSCheck  `mapstructure:"dnsChecks"`
 	K8sChecks  map[string]K8sCheck  `mapstructure:"k8sChecks"`
+	ConnChecks map[string]ConnCheck `mapstructure:"connChecks"`
+	GRPCChecks map[string]GRPCCheck `mapstructure:"grpcChecks"`
 }
 
 // BaseCheck holds the common properties across checks
@@ -39,11 +43,45 @@ type HTTPCheck struct {
 	BaseCheck
 }
 
+type GRPCCheck struct {
+	Address       string        `mapstructure:"address,omitempty"`
+	Service       string        `mapstructure:"service,omitempty"`
+	UserAgent     string        `mapstructure:"userAgent,omitempty"`
+	ConnTimeout   time.Duration `mapstructure:"connTimeout,omitempty"`
+	RPCHeaders    metadata.MD   `mapstructure:"RPCHeaders,omitempty"`
+	RPCTimeout    time.Duration `mapstructure:"rpcTimeout,omitempty"`
+	TLS           bool          `mapstructure:"tls,omitempty"`
+	TLSNoVerify   bool          `mapstructure:"tlsNoVerify,omitempty"`
+	TLSCACert     string        `mapstructure:"tlscaCert,omitempty"`
+	TLSClientCert string        `mapstructure:"tlsClientCert,omitempty"`
+	TLSClientKey  string        `mapstructure:"tlsClientKey,omitempty"`
+	TLSServerName string        `mapstructure:"tlsServerName,omitempty"`
+	ALTS          bool          `mapstructure:"alts,omitempty"`
+	Verbose       bool          `mapstructure:"verbose,omitempty"`
+	GZIP          bool          `mapstructure:"gzip,omitempty"`
+	SPIFFE        bool          `mapstructure:"spiffe,omitempty"`
+	BaseCheck
+}
+
 type DNSCheck struct {
 	// DNS name to check
 	Host string `mapstructure:"host,omitempty"`
 	// Minimum number of results the query must return, defaults to 1
 	MinRequiredResults int
+	BaseCheck
+}
+
+type ConnCheck struct {
+	// AddressIP address or host to ping
+	// see the net.Dial doccs for details
+	Address string `mapstructure:"address,omitempty"`
+	// Protocol to use, defaults to tcp
+	// Known protocols are "tcp", "tcp4" (IPv4-only), "tcp6" (IPv6-only),
+	// "udp", "udp4" (IPv4-only), "udp6" (IPv6-only), "ip", "ip4"
+	// (IPv4-only), "ip6" (IPv6-only), "unix", "unixgram" and
+	// "unixpacket".
+	// see the net.Dial doccs for details
+	Protocol string `mapstructure:"protocol,omitempty"`
 	BaseCheck
 }
 
