@@ -17,7 +17,8 @@ import (
 func New(cfg *config.Config) *cobra.Command {
 	var (
 		prettyJSON bool
-		color      bool
+		colour     bool
+		plain      bool
 	)
 	cmd := &cobra.Command{
 		Use:          "check",
@@ -34,6 +35,10 @@ func New(cfg *config.Config) *cobra.Command {
 			chkr.Check(context.Background())
 			status := chkr.GetStatus()
 
+			if plain {
+				colour = false
+				prettyJSON = false
+			}
 			var buf strings.Builder
 			enc := json.NewEncoder(&buf)
 			if prettyJSON {
@@ -42,7 +47,7 @@ func New(cfg *config.Config) *cobra.Command {
 			if err := enc.Encode(status); err != nil {
 				panic(err)
 			}
-			if prettyJSON {
+			if colour {
 				err := quick.Highlight(os.Stdout, buf.String(), "json", "terminal", "native")
 				if err != nil {
 					panic(err)
@@ -68,7 +73,8 @@ func New(cfg *config.Config) *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&prettyJSON, "pretty-print", "p", true, "pretty print the check status")
-	cmd.Flags().BoolVarP(&color, "color", "C", true, "print the check status in color")
+	cmd.Flags().BoolVarP(&colour, "colour", "C", true, "print the check status in colour")
+	cmd.Flags().BoolVarP(&plain, "plain", "P", true, "disable both pretty printing and colour")
 
 	return cmd
 }
