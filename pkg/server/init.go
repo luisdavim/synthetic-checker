@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -14,7 +15,7 @@ func mustBindPFlag(key string, f *flag.Flag) {
 	}
 }
 
-func init() {
+func Init(cmd *cobra.Command) {
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("/etc/config")
 	viper.SetConfigName("server")
@@ -37,7 +38,7 @@ func init() {
 	flagSet.BoolP("pretty-json", "", false, "Pretty print JSON responses")
 	flagSet.BoolP("strip-slashes", "S", false, "Strip trailing slashes befofore matching routes")
 
-	flag.CommandLine.AddFlagSet(flagSet)
+	cmd.Flags().AddFlagSet(flagSet)
 	if err := flagSet.Parse(flag.Args()); err != nil {
 		panic(err)
 	}

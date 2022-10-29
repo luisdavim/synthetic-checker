@@ -178,6 +178,19 @@ func (runner *CheckRunner) Sync(leader string) {
 	runner.log.Info().Msg("synced data from leader")
 }
 
+func (runner *CheckRunner) Check(ctx context.Context) {
+	var wg sync.WaitGroup
+	for name, check := range runner.checks {
+		wg.Add(1)
+		go func(name string, check api.Check) {
+			defer wg.Done()
+			time.Sleep(check.InitialDelay())
+			runner.check(ctx, name, check)
+		}(name, check)
+	}
+	wg.Wait()
+}
+
 // check executes one check and stores the resulting status
 func (runner *CheckRunner) check(ctx context.Context, name string, check api.Check) {
 	var err error

@@ -34,6 +34,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
+            - start
             - -F {{ .Values.statusCodes.failed }}
             - -D {{ .Values.statusCodes.degraded }}
           {{- if and (gt (int .Values.replicaCount) 1) .Values.k8sLeaderElection }}

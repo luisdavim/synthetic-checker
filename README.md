@@ -11,39 +11,71 @@ The tool supports the following types of checks:
 
 More types of checks can be added in the future.
 
-Checks are executed periodically and asynchronously in the background.
+Checks can be executed periodically and asynchronously in the background.
 
 To make development easier, a [Makefile](./Makefile) is provided, run `make` with no arguments to get a list of all available options.
-
 To run all the linters, tests and build a binary, run `make build`
 
 ## Usage
 
-Check the `--help` flag to see all available options:
+This tool can be used either as a cli to run the checks once and get the results printed out.
+Or as a service that periodically runs the checks and exposes the results through an API endpoint.
+When running in the cli mode, the checks are stil executed in parallel and the configured `initialDelay` is stil used.
+
+Check the `--help` flag on each sub-command to see all available options:
 
 ```console
-$ go run main.go --help
-A service to run synthetic checks and report their results.
+$ go run main.go -h
+A tool to run synthetic checks and report their results.
 
 Usage:
-  synthetic-checker [flags]
+  synthetic-checker [command]
+
+Available Commands:
+  check       Run the checks once and get an exit code
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  serve       Run as a service
 
 Flags:
-  -C, --certFile string            File containing the x509 Certificate for HTTPS.
-  -c, --config string              config file (default is $HOME/.checks.yaml)
-  -d, --debug                      Set log level to debug
-  -D, --degraded-status-code int   HTTP status code to return when check check is failed (default 200)
-  -F, --failed-status-code int     HTTP status code to return when all checks are failed (default 200)
-  -h, --help                       help for synthetic-checker
-      --k8s-leader-election        Enable leader election, only works when running in k8s
-  -K, --keyFile string             File containing the x509 private key for HTTPS.
-  -P, --pass string                Set BasicAuth password for the http listener
-  -p, --port int                   Port for the http listener (default 8080)
-      --pretty-json                Pretty print JSON responses
-  -l, --request-limit int          Max requests per second per client allowed
-  -s, --securePort int             Port for the HTTPS listener (default 8443)
-  -S, --strip-slashes              Strip trailing slashes befofore matching routes
-  -U, --user string                Set BasicAuth user for the http listener
+  -c, --config string   config file (default is $HOME/.checks.yaml)
+  -h, --help            help for synthetic-checker
+
+Use "synthetic-checker [command] --help" for more information about a command.
+```
+
+To run the tool as a service:
+
+```console
+$ go run main.go start --help
+Run as a service.
+
+Usage:
+  synthetic-checker serve [flags]
+
+Aliases:
+  serve, run, start
+
+Flags:
+  -C, --certFile string             File containing the x509 Certificate for HTTPS.
+  -d, --debug                       Set log level to debug
+  -D, --degraded-status-code int    HTTP status code to return when check check is failed (default 200)
+  -F, --failed-status-code int      HTTP status code to return when all checks are failed (default 200)
+  -h, --help                        help for serve
+      --k8s-leader-election         Enable leader election, only works when running in k8s
+  -K, --keyFile string              File containing the x509 private key for HTTPS.
+      --leader-election-id string   set the leader election ID, defaults to POD_NAME or hostname
+      --leader-election-ns string   set the leader election namespace, defaults to the current namespace
+  -P, --pass string                 Set BasicAuth password for the http listener
+  -p, --port int                    Port for the http listener (default 8080)
+      --pretty-json                 Pretty print JSON responses
+  -l, --request-limit int           Max requests per second per client allowed
+  -s, --securePort int              Port for the HTTPS listener (default 8443)
+  -S, --strip-slashes               Strip trailing slashes befofore matching routes
+  -U, --user string                 Set BasicAuth user for the http listener
+
+Global Flags:
+  -c, --config string   config file (default is $HOME/.checks.yaml)
 ```
 
 ## Configuration
@@ -93,7 +125,7 @@ k8sChecks:
     initialDelay: 2s
 ```
 
-## Running the service
+## Running as a service
 
 You can run the service locally with docker or using the built binary directly.
 
@@ -102,7 +134,7 @@ You can run the service locally with docker or using the built binary directly.
 The simplest way to start the service is through the `go run` command:
 
 ```sh
-go run main.go
+go run main.go start
 ```
 
 Once the service has been started, you can try its endpoints with curl.
