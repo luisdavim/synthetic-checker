@@ -18,16 +18,11 @@ func statusHandler(chkr *checker.CheckRunner, srv *server.Server, failStatus, de
 		statusCode := http.StatusOK
 		checkStatus := chkr.GetStatus()
 		if failStatus != http.StatusOK || degradedStatus != http.StatusOK {
-			allFailed := true
-			for _, res := range checkStatus {
-				if !res.OK {
-					statusCode = degradedStatus
-				} else {
-					allFailed = false
-				}
-			}
+			allFailed, anyFailed := checker.Evaluate(checkStatus)
 			if allFailed {
 				statusCode = failStatus
+			} else if anyFailed {
+				statusCode = degradedStatus
 			}
 		}
 		srv.JSONResponse(w, r, checkStatus, statusCode)

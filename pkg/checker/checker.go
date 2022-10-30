@@ -191,6 +191,23 @@ func (runner *CheckRunner) Check(ctx context.Context) {
 	wg.Wait()
 }
 
+func (runner *CheckRunner) Summary() (allFailed, anyFailed bool) {
+	status := runner.GetStatus()
+	return Evaluate(status)
+}
+
+func Evaluate(status map[string]api.Status) (allFailed, anyFailed bool) {
+	allFailed = true
+	for _, result := range status {
+		if !result.OK {
+			anyFailed = true
+		} else {
+			allFailed = false
+		}
+	}
+	return
+}
+
 // check executes one check and stores the resulting status
 func (runner *CheckRunner) check(ctx context.Context, name string, check api.Check) {
 	var err error

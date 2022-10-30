@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/alecthomas/chroma/quick"
 	"github.com/spf13/cobra"
@@ -19,6 +21,7 @@ func New(cfg *config.Config) *cobra.Command {
 		prettyJSON bool
 		colour     bool
 		plain      bool
+		retries    int64
 	)
 	cmd := &cobra.Command{
 		Use:          "check",
@@ -32,7 +35,21 @@ func New(cfg *config.Config) *cobra.Command {
 				return err
 			}
 
-			chkr.Check(context.Background())
+			var anyFailed bool
+			retries += 1
+			for i := retries; i > 0; i-- {
+				chkr.Check(context.Background())
+				_, anyFailed = chkr.Summary()
+				if !anyFailed {
+					break
+				}
+				t := time.Duration(math.Pow(2, float64(retries-i)))
+				if i > 1 {
+					fmt.Printf("Error: some checks have failed, retrying in %ds\n", t)
+				}
+				time.Sleep(t * time.Second)
+			}
+
 			status := chkr.GetStatus()
 
 			if plain {
@@ -56,15 +73,7 @@ func New(cfg *config.Config) *cobra.Command {
 				fmt.Println(buf.String())
 			}
 
-			allOK := true
-			for _, result := range status {
-				if !result.OK {
-					allOK = false
-					break
-				}
-			}
-
-			if !allOK {
+			if anyFailed {
 				return fmt.Errorf("some checks have failed")
 			}
 
@@ -74,7 +83,8 @@ func New(cfg *config.Config) *cobra.Command {
 
 	cmd.Flags().BoolVarP(&prettyJSON, "pretty-print", "p", true, "pretty print the check status")
 	cmd.Flags().BoolVarP(&colour, "colour", "C", true, "print the check status in colour")
-	cmd.Flags().BoolVarP(&plain, "plain", "P", true, "disable both pretty printing and colour")
+	cmd.Flags().BoolVarP(&plain, "plain", "P", false, "disable both pretty printing and colour")
+	cmd.Flags().Int64VarP(&retries, "retries", "r", 0, "number of times to retry on failure")
 
 	return cmd
 }
