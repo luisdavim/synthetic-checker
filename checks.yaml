@@ -11,6 +11,11 @@ dnsChecks:
   google:
     host: "www.google.com"
     interval: 15s
+connChecks:
+  cfDNS:
+    address: "1.1.1.1:53"
+    protocol: udp
+    interval: 15s
 k8sChecks:
   coredns:
     kind: "Deployment.v1.apps"
