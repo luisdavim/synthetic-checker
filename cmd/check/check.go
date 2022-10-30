@@ -40,13 +40,11 @@ func New(cfg *config.Config) *cobra.Command {
 			for i := retries; i > 0; i-- {
 				chkr.Check(context.Background())
 				_, anyFailed = chkr.Summary()
-				if !anyFailed {
+				if !anyFailed || i <= 1 {
 					break
 				}
 				t := time.Duration(math.Pow(2, float64(retries-i)))
-				if i > 1 {
-					fmt.Printf("Error: some checks have failed, retrying in %ds\n", t)
-				}
+				fmt.Printf("Error: some checks have failed, retrying in %ds\n", t)
 				time.Sleep(t * time.Second)
 			}
 
