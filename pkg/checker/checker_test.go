@@ -141,12 +141,12 @@ func TestEvaluate(t *testing.T) {
 	}
 	tests := []struct {
 		name     string
-		status   map[string]api.Status
+		status   api.Statuses
 		expected expected
 	}{
 		{
 			name: "all OK",
-			status: map[string]api.Status{
+			status: api.Statuses{
 				"foo": {
 					OK: true,
 				},
@@ -158,7 +158,7 @@ func TestEvaluate(t *testing.T) {
 		},
 		{
 			name: "all KO",
-			status: map[string]api.Status{
+			status: api.Statuses{
 				"foo": {
 					OK: false,
 				},
@@ -170,7 +170,7 @@ func TestEvaluate(t *testing.T) {
 		},
 		{
 			name: "one failed",
-			status: map[string]api.Status{
+			status: api.Statuses{
 				"foo": {
 					OK: true,
 				},

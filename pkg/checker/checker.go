@@ -31,8 +31,8 @@ var (
 
 // CheckRunner reprents the main checker responsible for executing all the checks
 type CheckRunner struct {
-	checks map[string]api.Check
-	status map[string]api.Status
+	checks api.Checks
+	status api.Statuses
 	log    zerolog.Logger
 	sync.RWMutex
 }
@@ -41,8 +41,8 @@ type CheckRunner struct {
 func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 	prometheus.MustRegister(checkStatus, checkDuration)
 	runner := &CheckRunner{
-		checks: make(map[string]api.Check),
-		status: make(map[string]api.Status),
+		checks: make(api.Checks),
+		status: make(api.Statuses),
 		log:    zerolog.New(os.Stderr).With().Timestamp().Str("name", "checkerLogger").Logger().Level(zerolog.InfoLevel),
 	}
 
@@ -95,7 +95,7 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 }
 
 // GetStatus returns the overall status of all the checks
-func (runner *CheckRunner) GetStatus() map[string]api.Status {
+func (runner *CheckRunner) GetStatus() api.Statuses {
 	return runner.status
 }
 
@@ -165,7 +165,7 @@ func (runner *CheckRunner) Sync(leader string) {
 		return
 	}
 	defer res.Body.Close()
-	status := make(map[string]api.Status)
+	status := make(api.Statuses)
 	err = json.NewDecoder(res.Body).Decode(&status)
 	if err != nil {
 		runner.log.Err(err).Msg("failed to sync")
@@ -196,7 +196,7 @@ func (runner *CheckRunner) Summary() (allFailed, anyFailed bool) {
 	return Evaluate(status)
 }
 
-func Evaluate(status map[string]api.Status) (allFailed, anyFailed bool) {
+func Evaluate(status api.Statuses) (allFailed, anyFailed bool) {
 	allFailed = true
 	for _, result := range status {
 		if !result.OK {

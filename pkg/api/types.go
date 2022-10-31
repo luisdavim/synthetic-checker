@@ -15,6 +15,8 @@ type Check interface {
 	InitialDelay() time.Duration
 }
 
+type Checks map[string]Check
+
 // Status represents the state of what is being checked
 type Status struct {
 	// OK indicates if the last check passed
@@ -30,3 +32,5 @@ type Status struct {
 	// TimeOfFirstFailure indicates when the first failure occurred
 	TimeOfFirstFailure time.Time `json:"timeOfFirstFailure"`
 }
+
+type Statuses map[string]Status
