@@ -67,7 +67,7 @@ type DNSCheck struct {
 	// DNS name to check
 	Host string `mapstructure:"host,omitempty"`
 	// Minimum number of results the query must return, defaults to 1
-	MinRequiredResults int
+	MinRequiredResults int `mapstructure:"minRequiredResults,omitempty"`
 	BaseCheck
 }
 

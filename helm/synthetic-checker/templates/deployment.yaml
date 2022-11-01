@@ -35,9 +35,10 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - start
+            - -p {{ .Values.service.containerPort }}
             - -F {{ .Values.statusCodes.failed }}
             - -D {{ .Values.statusCodes.degraded }}
-          {{- if and (gt (int .Values.replicaCount) 1) .Values.k8sLeaderElection }}
+          {{- if and (or (gt (int .Values.replicaCount) 1) .Values.autoscaling.enabled) .Values.k8sLeaderElection }}
             - --k8s-leader-election
           {{- end }}
           ports:
