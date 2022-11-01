@@ -3,6 +3,7 @@ package checker
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"sync"
@@ -137,6 +138,7 @@ func (runner *CheckRunner) Run() context.CancelFunc {
 	return cancel
 }
 
+// RunWithContext schedules all the checks, running them periodically in the background, according to their configuration
 func (runner *CheckRunner) RunWithContext(ctx context.Context) {
 	for name, check := range runner.checks {
 		go func(name string, check api.Check) {
@@ -157,27 +159,34 @@ func (runner *CheckRunner) RunWithContext(ctx context.Context) {
 	}
 }
 
-// Sync fetches the state from the leader
-func (runner *CheckRunner) Sync(leader string) {
-	res, err := http.Get("http://" + leader + ":8080/")
-	if err != nil {
-		runner.log.Err(err).Msg("failed to sync")
-		return
+// Syncer returns a sync function that fetches the state from the leader
+func (runner *CheckRunner) Syncer(useSSL bool, port int) func(string) {
+	protocol := "http"
+	if useSSL {
+		protocol += "s"
 	}
-	defer res.Body.Close()
-	status := make(api.Statuses)
-	err = json.NewDecoder(res.Body).Decode(&status)
-	if err != nil {
-		runner.log.Err(err).Msg("failed to sync")
-		return
-	}
+	return func(leader string) {
+		res, err := http.Get(fmt.Sprintf("%s://%s:%d/", protocol, leader, port))
+		if err != nil {
+			runner.log.Err(err).Msg("failed to sync")
+			return
+		}
+		defer res.Body.Close()
+		status := make(api.Statuses)
+		err = json.NewDecoder(res.Body).Decode(&status)
+		if err != nil {
+			runner.log.Err(err).Msg("failed to sync")
+			return
+		}
 
-	for name, result := range status {
-		runner.updateStatusFor(name, result)
+		for name, result := range status {
+			runner.updateStatusFor(name, result)
+		}
+		runner.log.Info().Msg("synced data from leader")
 	}
-	runner.log.Info().Msg("synced data from leader")
 }
 
+// Check runs all the checks in parallel and waits for them to complete
 func (runner *CheckRunner) Check(ctx context.Context) {
 	var wg sync.WaitGroup
 	for name, check := range runner.checks {

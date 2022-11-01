@@ -336,7 +336,8 @@ func TestSync(t *testing.T) {
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
-			c.Sync("leader")
+			sync := c.Syncer(false, 8080)
+			sync("leader")
 			for name := range c.checks {
 				actual, ok := c.GetStatusFor(name)
 				if !ok {
