@@ -62,11 +62,11 @@ func New(cfg *config.Config) *cobra.Command {
 					return err
 				}
 				go le.RunLeaderElection(context.Background(), func(ctx context.Context) {
-					chkr.RunWithContext(ctx)
-					<-ctx.Done() // hold the routine, RunWithContext goes into the background
+					chkr.Run(ctx)
+					<-ctx.Done() // hold the routine, Run goes into the background
 				}, chkr.Syncer(false, srvCfg.HTTP.Port))
 			} else {
-				stop := chkr.Run() // Start the checker
+				stop := chkr.Start() // Start the checker
 				srv.WithShutdownFunc(func() error {
 					// ensure the checker routines are stopped
 					stop()

@@ -131,15 +131,15 @@ func (runner *CheckRunner) updateMetricsFor(name string) {
 	}
 }
 
-// Run schedules all the checks, running them periodically in the background, according to their configuration
-func (runner *CheckRunner) Run() context.CancelFunc {
-	ctx, cancel := context.WithCancel(context.Background())
-	runner.RunWithContext(ctx)
-	return cancel
+// Start schedules all the checks, running them periodically in the background, according to their configuration
+func (runner *CheckRunner) Start() context.CancelFunc {
+	ctx, stop := context.WithCancel(context.Background())
+	runner.Run(ctx)
+	return stop
 }
 
-// RunWithContext schedules all the checks, running them periodically in the background, according to their configuration
-func (runner *CheckRunner) RunWithContext(ctx context.Context) {
+// Run schedules all the checks, running them periodically in the background, according to their configuration
+func (runner *CheckRunner) Run(ctx context.Context) {
 	for name, check := range runner.checks {
 		go func(name string, check api.Check) {
 			time.Sleep(check.InitialDelay())
