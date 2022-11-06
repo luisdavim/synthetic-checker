@@ -34,6 +34,7 @@ var (
 type CheckRunner struct {
 	checks api.Checks
 	status api.Statuses
+	stop   map[string](chan struct{})
 	log    zerolog.Logger
 	sync.RWMutex
 }
@@ -44,6 +45,7 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 	runner := &CheckRunner{
 		checks: make(api.Checks),
 		status: make(api.Statuses),
+		stop:   make(map[string](chan struct{})),
 		log:    zerolog.New(os.Stderr).With().Timestamp().Str("name", "checkerLogger").Logger().Level(zerolog.InfoLevel),
 	}
 
@@ -95,6 +97,32 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 	return runner, nil
 }
 
+// AddCheck schedules a new check
+func (runner *CheckRunner) AddCheck(name string, check api.Check) {
+	runner.Lock()
+	if stopCh, ok := runner.stop[name]; ok {
+		stopCh <- struct{}{}
+		close(stopCh)
+	}
+	runner.checks[name] = check
+	runner.stop[name] = make(chan struct{})
+	runner.run(context.Background(), name, check, runner.stop[name])
+	runner.Unlock()
+}
+
+// DelCheck stops the given check
+func (runner *CheckRunner) DelCheck(name string) {
+	runner.Lock()
+	if stopCh, ok := runner.stop[name]; ok {
+		stopCh <- struct{}{}
+		close(stopCh)
+	}
+	delete(runner.stop, name)
+	delete(runner.checks, name)
+	delete(runner.status, name)
+	runner.Unlock()
+}
+
 // GetStatus returns the overall status of all the checks
 func (runner *CheckRunner) GetStatus() api.Statuses {
 	return runner.status
@@ -141,21 +169,40 @@ func (runner *CheckRunner) Start() context.CancelFunc {
 // Run schedules all the checks, running them periodically in the background, according to their configuration
 func (runner *CheckRunner) Run(ctx context.Context) {
 	for name, check := range runner.checks {
-		go func(name string, check api.Check) {
-			time.Sleep(check.InitialDelay())
-			runner.check(ctx, name, check)
-			ticker := time.NewTicker(check.Interval())
-			for {
-				select {
-				case <-ticker.C:
-					runner.check(ctx, name, check)
-				case <-ctx.Done():
-					runner.log.Info().Str("name", name).Msg("stopping checks")
-					ticker.Stop()
-					return
-				}
+		runner.stop[name] = make(chan struct{})
+		runner.run(ctx, name, check, runner.stop[name])
+	}
+}
+
+func (runner *CheckRunner) run(ctx context.Context, name string, check api.Check, quit <-chan struct{}) {
+	go func() {
+		time.Sleep(check.InitialDelay())
+		runner.check(ctx, name, check)
+		ticker := time.NewTicker(check.Interval())
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				runner.check(ctx, name, check)
+			case <-ctx.Done():
+				runner.log.Info().Str("name", name).Msg("stopping checks")
+				return
+			case <-quit:
+				runner.log.Info().Str("name", name).Msg("got quit signal stopping checks")
+				return
 			}
-		}(name, check)
+		}
+	}()
+}
+
+// Stop stops all checks
+func (runner *CheckRunner) Stop() {
+	for name := range runner.checks {
+		if stopCh, ok := runner.stop[name]; ok {
+			stopCh <- struct{}{}
+			close(stopCh)
+		}
+		delete(runner.stop, name)
 	}
 }
 

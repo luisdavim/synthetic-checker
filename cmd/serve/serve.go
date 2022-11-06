@@ -9,6 +9,7 @@ import (
 
 	"github.com/luisdavim/synthetic-checker/pkg/checker"
 	"github.com/luisdavim/synthetic-checker/pkg/config"
+	"github.com/luisdavim/synthetic-checker/pkg/ingresswatcher"
 	"github.com/luisdavim/synthetic-checker/pkg/leaderelection"
 	"github.com/luisdavim/synthetic-checker/pkg/server"
 )
@@ -34,6 +35,7 @@ func New(cfg *config.Config) *cobra.Command {
 		failStatus     int
 		degradedStatus int
 		haMode         bool
+		watchIngresses bool
 		leID           string
 		leNs           string
 	)
@@ -74,6 +76,10 @@ func New(cfg *config.Config) *cobra.Command {
 				})
 			}
 
+			if watchIngresses {
+				go ingresswatcher.Start(chkr, fmt.Sprintf(":%d", srvCfg.HTTP.Port+1), fmt.Sprintf(":%d", srvCfg.HTTP.Port+2), haMode)
+			}
+
 			routes := server.Routes{
 				"/": {
 					Func:    statusHandler(chkr, srv, failStatus, degradedStatus),
@@ -94,6 +100,7 @@ func New(cfg *config.Config) *cobra.Command {
 	cmd.Flags().BoolVarP(&haMode, "k8s-leader-election", "", false, "Enable leader election, only works when running in k8s")
 	cmd.Flags().StringVarP(&leID, "leader-election-id", "", "", "set the leader election ID, defaults to POD_NAME or hostname")
 	cmd.Flags().StringVarP(&leNs, "leader-election-ns", "", "", "set the leader election namespace, defaults to the current namespace")
+	cmd.Flags().BoolVarP(&watchIngresses, "watch-ingresses", "w", false, "Automatically setup checks for k8s ingresses, only works when running in k8s")
 
 	return cmd
 }
