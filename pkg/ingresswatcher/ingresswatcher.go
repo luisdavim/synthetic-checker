@@ -5,8 +5,9 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-	"github.com/luisdavim/synthetic-checker/pkg/checker"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+
+	"github.com/luisdavim/synthetic-checker/pkg/checker"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -30,7 +31,7 @@ func init() {
 
 func Start(chkr *checker.CheckRunner, metricsAddr, probeAddr string, enableLeaderElection bool) error {
 	opts := zap.Options{
-		Development: true,
+		Development: false,
 	}
 	// opts.BindFlags(flag.CommandLine)
 	// flag.Parse()

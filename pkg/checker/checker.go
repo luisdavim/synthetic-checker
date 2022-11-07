@@ -99,23 +99,31 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 
 // AddCheck schedules a new check
 func (runner *CheckRunner) AddCheck(name string, check api.Check) {
+	runner.log.Info().Str("name", name).Msg("new check")
 	runner.Lock()
-	if stopCh, ok := runner.stop[name]; ok {
-		stopCh <- struct{}{}
-		close(stopCh)
-	}
+	_, found := runner.checks[name]
+	// TODO: do we need to stop and Start the check and how to avoid a deadlock?
+	// if stopCh, ok := runner.stop[name]; found && ok && stopCh != nil {
+	// 	runner.log.Info().Str("name", name).Msg("stopping old check")
+	// 	stopCh <- struct{}{}
+	// 	// close(stopCh)
+	// }
 	runner.checks[name] = check
-	runner.stop[name] = make(chan struct{})
-	runner.run(context.Background(), name, check, runner.stop[name])
+	if !found {
+		runner.stop[name] = make(chan struct{})
+		runner.run(context.Background(), name, check, runner.stop[name])
+	}
 	runner.Unlock()
 }
 
 // DelCheck stops the given check
 func (runner *CheckRunner) DelCheck(name string) {
+	runner.log.Info().Str("name", name).Msg("deleting check")
 	runner.Lock()
-	if stopCh, ok := runner.stop[name]; ok {
+	if stopCh, ok := runner.stop[name]; ok && stopCh != nil {
+		runner.log.Info().Str("name", name).Msg("stopping check")
 		stopCh <- struct{}{}
-		close(stopCh)
+		// close(stopCh)
 	}
 	delete(runner.stop, name)
 	delete(runner.checks, name)
@@ -175,6 +183,7 @@ func (runner *CheckRunner) Run(ctx context.Context) {
 }
 
 func (runner *CheckRunner) run(ctx context.Context, name string, check api.Check, quit <-chan struct{}) {
+	// ctx, _ = context.WithCancel(ctx)
 	go func() {
 		time.Sleep(check.InitialDelay())
 		runner.check(ctx, name, check)
@@ -200,7 +209,7 @@ func (runner *CheckRunner) Stop() {
 	for name := range runner.checks {
 		if stopCh, ok := runner.stop[name]; ok {
 			stopCh <- struct{}{}
-			close(stopCh)
+			// close(stopCh)
 		}
 		delete(runner.stop, name)
 	}

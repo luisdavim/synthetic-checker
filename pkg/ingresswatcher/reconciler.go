@@ -42,12 +42,13 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	finalizerName := "synthetic_checker/finalizer"
+	finalizerName := "synthetic-checker/finalizer"
 
 	if ingress.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(ingress, finalizerName) {
 			controllerutil.AddFinalizer(ingress, finalizerName)
 			if err := r.Update(ctx, ingress); err != nil {
+				log.Error(err, "failed to add finalizer")
 				return ctrl.Result{}, err
 			}
 		}
@@ -55,17 +56,21 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// The object is being deleted
 		if controllerutil.ContainsFinalizer(ingress, finalizerName) {
 			if err := r.cleanup(ingress); err != nil {
+				log.Error(err, "failed to cleanup checks for ingress")
 				return ctrl.Result{}, err
 			}
 			controllerutil.RemoveFinalizer(ingress, finalizerName)
 			if err := r.Update(ctx, ingress); err != nil {
+				log.Error(err, "failed to remove finalizer")
 				return ctrl.Result{}, err
 			}
 		}
 		return ctrl.Result{}, nil
 	}
 
+	log.Info("setting up checks for ingress")
 	if err := r.setup(ingress); err != nil {
+		log.Error(err, "failed to setup checks for ingress")
 		return ctrl.Result{}, err
 	}
 

@@ -77,7 +77,12 @@ func New(cfg *config.Config) *cobra.Command {
 			}
 
 			if watchIngresses {
-				go ingresswatcher.Start(chkr, fmt.Sprintf(":%d", srvCfg.HTTP.Port+1), fmt.Sprintf(":%d", srvCfg.HTTP.Port+2), haMode)
+				go func() {
+					err := ingresswatcher.Start(chkr, fmt.Sprintf(":%d", srvCfg.HTTP.Port+1), fmt.Sprintf(":%d", srvCfg.HTTP.Port+2), haMode)
+					if err != nil {
+						panic(err)
+					}
+				}()
 			}
 
 			routes := server.Routes{
