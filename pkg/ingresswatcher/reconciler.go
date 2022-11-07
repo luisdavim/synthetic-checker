@@ -51,6 +51,7 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				log.Error(err, "failed to add finalizer")
 				return ctrl.Result{}, err
 			}
+			return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
 	} else {
 		// The object is being deleted
@@ -110,19 +111,33 @@ func (r *IngressReconciler) cleanup(ingress *netv1.Ingress) error {
 
 func getHosts(ingress *netv1.Ingress) []string {
 	var hosts []string
+	found := make(map[string]struct{})
 	for _, rule := range ingress.Spec.Rules {
-		if rule.Host != "" {
+		if rule.Host == "" {
+			continue
+		}
+		if _, ok := found[rule.Host]; !ok {
+			found[rule.Host] = struct{}{}
 			hosts = append(hosts, rule.Host)
 		}
 	}
+
 	if aliases, ok := ingress.GetAnnotations()["nginx.ingress.kubernetes.io/server-alias"]; ok {
 		for _, host := range strings.Split(aliases, ",") {
-			hosts = append(hosts, strings.TrimSpace(host))
+			host = strings.TrimSpace(host)
+			if _, ok := found[host]; !ok {
+				found[host] = struct{}{}
+				hosts = append(hosts, host)
+			}
 		}
 	}
 
 	for _, status := range ingress.Status.LoadBalancer.Ingress {
-		if status.Hostname != "" {
+		if status.Hostname == "" {
+			continue
+		}
+		if _, ok := found[status.Hostname]; !ok {
+			found[status.Hostname] = struct{}{}
 			hosts = append(hosts, status.Hostname)
 		}
 	}
