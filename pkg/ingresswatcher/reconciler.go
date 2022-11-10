@@ -16,6 +16,11 @@ import (
 	"github.com/luisdavim/synthetic-checker/pkg/config"
 )
 
+const (
+	finalizerName = "synthetic-checker/finalizer"
+	defaultLBPort = ":443"
+)
+
 // IngressReconciler reconciles a Ingress object
 type IngressReconciler struct {
 	client.Client
@@ -41,8 +46,6 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		log.Error(err, "unable to fetch Ingress")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
-	finalizerName := "synthetic-checker/finalizer"
 
 	if ingress.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(ingress, finalizerName) {
@@ -81,6 +84,7 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 	hosts := getHosts(ingress)
 
+	// setup DNS checks for all ingress Hostnames
 	for i, host := range hosts {
 		name := host + "-dns"
 		check, err := checks.NewDNSCheck(name,
@@ -96,22 +100,43 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 		r.Checker.AddCheck(name, check)
 	}
 
+	// setup connection checks for all ingress LBs
+	for i, lb := range getLBs(ingress) {
+		name := lb + "-conn"
+		check, err := checks.NewConnCheck(name,
+			config.ConnCheck{
+				Address: lb + defaultLBPort,
+				BaseCheck: config.BaseCheck{
+					InitialDelay: time.Duration(i) + 1*time.Second,
+				},
+			})
+		if err != nil {
+			return err
+		}
+		r.Checker.AddCheck(name, check)
+	}
+
 	return nil
 }
 
 func (r *IngressReconciler) cleanup(ingress *netv1.Ingress) error {
-	hosts := getHosts(ingress)
-
-	for _, host := range hosts {
+	for _, host := range getHosts(ingress) {
 		name := host + "-dns"
 		r.Checker.DelCheck(name)
 	}
+
+	for _, lb := range getLBs(ingress) {
+		name := lb + "-conn"
+		r.Checker.DelCheck(name)
+	}
+
 	return nil
 }
 
 func getHosts(ingress *netv1.Ingress) []string {
 	var hosts []string
 	found := make(map[string]struct{})
+
 	for _, rule := range ingress.Spec.Rules {
 		if rule.Host == "" {
 			continue
@@ -131,6 +156,13 @@ func getHosts(ingress *netv1.Ingress) []string {
 			}
 		}
 	}
+
+	return hosts
+}
+
+func getLBs(ingress *netv1.Ingress) []string {
+	var hosts []string
+	found := make(map[string]struct{})
 
 	for _, status := range ingress.Status.LoadBalancer.Ingress {
 		if status.Hostname == "" {

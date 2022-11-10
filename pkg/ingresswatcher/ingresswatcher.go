@@ -33,8 +33,6 @@ func Start(chkr *checker.CheckRunner, metricsAddr, probeAddr string, enableLeade
 	opts := zap.Options{
 		Development: false,
 	}
-	// opts.BindFlags(flag.CommandLine)
-	// flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
