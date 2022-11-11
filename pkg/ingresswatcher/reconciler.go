@@ -2,6 +2,7 @@ package ingresswatcher
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
@@ -10,6 +11,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/luisdavim/synthetic-checker/pkg/checker"
 	"github.com/luisdavim/synthetic-checker/pkg/checks"
@@ -17,8 +20,9 @@ import (
 )
 
 const (
-	finalizerName = "synthetic-checker/finalizer"
-	defaultLBPort = ":443"
+	finalizerName  = "synthetic-checker/finalizer"
+	skipAnnotation = "synthetic-checker/skip"
+	defaultLBPort  = ":443"
 )
 
 // IngressReconciler reconciles a Ingress object
@@ -31,7 +35,38 @@ type IngressReconciler struct {
 func (r *IngressReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&netv1.Ingress{}).
+		WithEventFilter(predicates()).
 		Complete(r)
+}
+
+func predicates() predicate.Predicate {
+	p := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			annotations := e.Object.GetAnnotations()
+			skip, _ := strconv.ParseBool(annotations[skipAnnotation])
+			return !skip
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			newAnnotations := e.ObjectNew.GetAnnotations()
+			skip, _ := strconv.ParseBool(newAnnotations[skipAnnotation])
+			if !skip {
+				return true
+			}
+			oldAnnotations := e.ObjectOld.GetAnnotations()
+			if s, _ := strconv.ParseBool(oldAnnotations[skipAnnotation]); !s {
+				// cleanyp needed
+				return true
+			}
+			return !skip
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return true
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return true
+		},
+	}
+	return predicate.And(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}), p)
 }
 
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresss,verbs=get;list;watch;create;update;patch;delete
@@ -70,6 +105,15 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 		}
 		return ctrl.Result{}, nil
+	}
+
+	annotations := ingress.GetAnnotations()
+
+	if v, ok := annotations[skipAnnotation]; ok {
+		if skip, _ := strconv.ParseBool(v); skip {
+			err := r.cleanup(ingress)
+			return ctrl.Result{}, err
+		}
 	}
 
 	log.Info("setting up checks for ingress")
