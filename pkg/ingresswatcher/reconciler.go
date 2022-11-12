@@ -20,10 +20,11 @@ import (
 )
 
 const (
-	finalizerName   = "synthetic-checker/finalizer"
-	skipAnnotation  = "synthetic-checker/skip"
-	portsAnnotation = "synthetic-checker/ports"
-	defaultLBPort   = ":443"
+	finalizerName      = "synthetic-checker/finalizer"
+	skipAnnotation     = "synthetic-checker/skip"
+	portsAnnotation    = "synthetic-checker/ports"
+	intervalAnnotation = "synthetic-checker/interval"
+	defaultLBPort      = ":443"
 )
 
 // IngressReconciler reconciles a Ingress object
@@ -112,9 +113,7 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	annotations := ingress.GetAnnotations()
-
-	if v, ok := annotations[skipAnnotation]; ok {
+	if v, ok := ingress.Annotations[skipAnnotation]; ok {
 		// skip annotation was added or changed from false to true
 		if skip, _ := strconv.ParseBool(v); skip {
 			err := r.cleanup(ingress)
@@ -132,16 +131,21 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
-	hosts := getHosts(ingress)
+	var interval time.Duration
+
+	if i, ok := ingress.Annotations[intervalAnnotation]; ok {
+		interval, _ = time.ParseDuration(i)
+	}
 
 	// setup DNS checks for all ingress Hostnames
-	for i, host := range hosts {
+	for i, host := range getHosts(ingress) {
 		name := host + "-dns"
 		check, err := checks.NewDNSCheck(name,
 			config.DNSCheck{
 				Host: host,
 				BaseCheck: config.BaseCheck{
 					InitialDelay: time.Duration(i) + 1*time.Second,
+					Interval:     interval,
 				},
 			})
 		if err != nil {
@@ -160,6 +164,7 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 					Address: lb,
 					BaseCheck: config.BaseCheck{
 						InitialDelay: time.Duration(i) + 1*time.Second,
+						Interval:     interval,
 					},
 				})
 			if err != nil {
@@ -189,7 +194,7 @@ func (r *IngressReconciler) cleanup(ingress *netv1.Ingress) error {
 // getPorts returns the list of ports to check by inspectin the resource's annotations
 func getPorts(ingress *netv1.Ingress) []string {
 	var ports []string
-	if ps, ok := ingress.GetAnnotations()[portsAnnotation]; ok {
+	if ps, ok := ingress.Annotations[portsAnnotation]; ok {
 		for _, port := range strings.Split(ps, ",") {
 			port = strings.TrimSpace(port)
 			if port == "" {
@@ -224,7 +229,7 @@ func getHosts(ingress *netv1.Ingress) []string {
 	}
 
 	// TODO: allow the user to pass a list of annotations for this
-	if aliases, ok := ingress.GetAnnotations()["nginx.ingress.kubernetes.io/server-alias"]; ok {
+	if aliases, ok := ingress.Annotations["nginx.ingress.kubernetes.io/server-alias"]; ok {
 		for _, host := range strings.Split(aliases, ",") {
 			host = strings.TrimSpace(host)
 			if _, ok := found[host]; !ok && host != "" {
