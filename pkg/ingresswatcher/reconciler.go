@@ -89,7 +89,8 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				log.Error(err, "failed to add finalizer")
 				return ctrl.Result{}, err
 			}
-			return ctrl.Result{RequeueAfter: time.Second}, nil
+			// no need to exit here the predicates will filter the finalizer update event
+			// return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
 	} else {
 		// The object is being deleted
