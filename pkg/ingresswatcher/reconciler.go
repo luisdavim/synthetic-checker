@@ -20,9 +20,10 @@ import (
 )
 
 const (
-	finalizerName  = "synthetic-checker/finalizer"
-	skipAnnotation = "synthetic-checker/skip"
-	defaultLBPort  = ":443"
+	finalizerName   = "synthetic-checker/finalizer"
+	skipAnnotation  = "synthetic-checker/skip"
+	portsAnnotation = "synthetic-checker/ports"
+	defaultLBPort   = ":443"
 )
 
 // IngressReconciler reconciles a Ingress object
@@ -39,6 +40,8 @@ func (r *IngressReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// predicates will filter events for ingresses that haven't changed
+// or are annotated to be skipped
 func predicates() predicate.Predicate {
 	p := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
@@ -54,7 +57,7 @@ func predicates() predicate.Predicate {
 			}
 			oldAnnotations := e.ObjectOld.GetAnnotations()
 			if s, _ := strconv.ParseBool(oldAnnotations[skipAnnotation]); !s {
-				// cleanyp needed
+				// cleanup needed
 				return true
 			}
 			return !skip
@@ -66,6 +69,7 @@ func predicates() predicate.Predicate {
 			return true
 		},
 	}
+
 	return predicate.And(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}), p)
 }
 
@@ -111,6 +115,7 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	annotations := ingress.GetAnnotations()
 
 	if v, ok := annotations[skipAnnotation]; ok {
+		// skip annotation was added or changed from false to true
 		if skip, _ := strconv.ParseBool(v); skip {
 			err := r.cleanup(ingress)
 			return ctrl.Result{}, err
@@ -147,18 +152,21 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 
 	// setup connection checks for all ingress LBs
 	for i, lb := range getLBs(ingress) {
-		name := lb + "-conn"
-		check, err := checks.NewConnCheck(name,
-			config.ConnCheck{
-				Address: lb + defaultLBPort,
-				BaseCheck: config.BaseCheck{
-					InitialDelay: time.Duration(i) + 1*time.Second,
-				},
-			})
-		if err != nil {
-			return err
+		for _, port := range getPorts(ingress) {
+			lb = lb + port
+			name := lb + "-conn"
+			check, err := checks.NewConnCheck(name,
+				config.ConnCheck{
+					Address: lb,
+					BaseCheck: config.BaseCheck{
+						InitialDelay: time.Duration(i) + 1*time.Second,
+					},
+				})
+			if err != nil {
+				return err
+			}
+			r.Checker.AddCheck(name, check)
 		}
-		r.Checker.AddCheck(name, check)
 	}
 
 	return nil
@@ -178,6 +186,29 @@ func (r *IngressReconciler) cleanup(ingress *netv1.Ingress) error {
 	return nil
 }
 
+// getPorts returns the list of ports to check by inspectin the resource's annotations
+func getPorts(ingress *netv1.Ingress) []string {
+	var ports []string
+	if ps, ok := ingress.GetAnnotations()[portsAnnotation]; ok {
+		for _, port := range strings.Split(ps, ",") {
+			port = strings.TrimSpace(port)
+			if port == "" {
+				continue
+			}
+			if !strings.HasPrefix(port, ":") {
+				port = ":" + port
+			}
+			ports = append(ports, port)
+		}
+	}
+	if len(ports) == 0 {
+		ports = append(ports, defaultLBPort)
+	}
+
+	return ports
+}
+
+// getHosts returns the list of hosts to check by inspectin the resource's spec and annotations
 func getHosts(ingress *netv1.Ingress) []string {
 	var hosts []string
 	found := make(map[string]struct{})
@@ -192,10 +223,11 @@ func getHosts(ingress *netv1.Ingress) []string {
 		}
 	}
 
+	// TODO: allow the user to pass a list of annotations for this
 	if aliases, ok := ingress.GetAnnotations()["nginx.ingress.kubernetes.io/server-alias"]; ok {
 		for _, host := range strings.Split(aliases, ",") {
 			host = strings.TrimSpace(host)
-			if _, ok := found[host]; !ok {
+			if _, ok := found[host]; !ok && host != "" {
 				found[host] = struct{}{}
 				hosts = append(hosts, host)
 			}
@@ -205,6 +237,7 @@ func getHosts(ingress *netv1.Ingress) []string {
 	return hosts
 }
 
+// getLBs returns the list of LBs to check by inspectin the resource's status
 func getLBs(ingress *netv1.Ingress) []string {
 	var hosts []string
 	found := make(map[string]struct{})
