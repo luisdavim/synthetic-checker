@@ -20,11 +20,12 @@ import (
 )
 
 const (
-	finalizerName      = "synthetic-checker/finalizer"
-	skipAnnotation     = "synthetic-checker/skip"
-	portsAnnotation    = "synthetic-checker/ports"
-	intervalAnnotation = "synthetic-checker/interval"
-	defaultLBPort      = ":443"
+	finalizerName       = "synthetic-checker/finalizer"
+	skipAnnotation      = "synthetic-checker/skip"
+	portsAnnotation     = "synthetic-checker/ports"
+	intervalAnnotation  = "synthetic-checker/interval"
+	endpointsAnnotation = "synthetic-checker/endpoints"
+	defaultLBPort       = ":443"
 )
 
 // IngressReconciler reconciles a Ingress object
@@ -137,8 +138,11 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 		interval, _ = time.ParseDuration(i)
 	}
 
+	hosts := getHosts(ingress)
+	ports := getPorts(ingress)
+
 	// setup DNS checks for all ingress Hostnames
-	for i, host := range getHosts(ingress) {
+	for i, host := range hosts {
 		name := host + "-dns"
 		check, err := checks.NewDNSCheck(name,
 			config.DNSCheck{
@@ -156,7 +160,7 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 
 	// setup connection checks for all ingress LBs
 	for i, lb := range getLBs(ingress) {
-		for _, port := range getPorts(ingress) {
+		for _, port := range ports {
 			lb = lb + port
 			name := lb + "-conn"
 			check, err := checks.NewConnCheck(name,
@@ -174,21 +178,91 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 		}
 	}
 
+	endpoints := getEndpoints(ingress)
+	if len(endpoints) == 0 {
+		return nil
+	}
+
+	// setup http checks
+	for i, host := range hosts {
+		for _, port := range ports {
+			for _, endpoint := range endpoints {
+				url := strings.ReplaceAll(host, "*", "check") + port + endpoint
+				scheme := "https://"
+				if strings.HasPrefix(port, ":80") {
+					scheme = "http://"
+				}
+				name := url + "-http"
+				url = scheme + url
+				check, err := checks.NewHTTPCheck(name,
+					config.HTTPCheck{
+						URL: url,
+						BaseCheck: config.BaseCheck{
+							InitialDelay: time.Duration(i) + 1*time.Second,
+							Interval:     interval,
+						},
+					})
+				if err != nil {
+					return err
+				}
+				r.Checker.AddCheck(name, check)
+			}
+		}
+	}
+
 	return nil
 }
 
 func (r *IngressReconciler) cleanup(ingress *netv1.Ingress) error {
-	for _, host := range getHosts(ingress) {
+	hosts := getHosts(ingress)
+	ports := getPorts(ingress)
+
+	for _, host := range hosts {
 		name := host + "-dns"
 		r.Checker.DelCheck(name)
 	}
 
 	for _, lb := range getLBs(ingress) {
-		name := lb + "-conn"
-		r.Checker.DelCheck(name)
+		for _, port := range ports {
+			name := lb + port + "-conn"
+			r.Checker.DelCheck(name)
+		}
+	}
+
+	endpoints := getEndpoints(ingress)
+	if len(endpoints) == 0 {
+		return nil
+	}
+
+	// setup http checks
+	for _, host := range hosts {
+		for _, port := range ports {
+			for _, endpoint := range endpoints {
+				url := strings.ReplaceAll(host, "*", "check") + port + endpoint
+				name := url + "-http"
+				r.Checker.DelCheck(name)
+			}
+		}
 	}
 
 	return nil
+}
+
+func getEndpoints(ingress *netv1.Ingress) []string {
+	var endpoints []string
+	if e, ok := ingress.Annotations[endpointsAnnotation]; ok {
+		for _, endpoint := range strings.Split(e, ",") {
+			endpoint = strings.TrimSpace(endpoint)
+			if endpoint != "" {
+				if !strings.HasPrefix(endpoint, "/") {
+					endpoint = "/" + endpoint
+				}
+				endpoints = append(endpoints, endpoint)
+			}
+		}
+	}
+
+	return endpoints
 }
 
 // getPorts returns the list of ports to check by inspectin the resource's annotations
