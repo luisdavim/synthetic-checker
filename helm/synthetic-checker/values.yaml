@@ -51,6 +51,7 @@ statusCodes:
 # set replicaCount > 1 and k8sLeaderElection to true to enable leader/follower HA mode
 replicaCount: 1
 k8sLeaderElection: false
+watchIngresses: false
 
 image:
   repository: synthetic-checker

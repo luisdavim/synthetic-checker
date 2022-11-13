@@ -75,6 +75,7 @@ Flags:
   -s, --securePort int              Port for the HTTPS listener (default 8443)
   -S, --strip-slashes               Strip trailing slashes befofore matching routes
   -U, --user string                 Set BasicAuth user for the http listener
+  -w, --watch-ingresses             Automatically setup checks for k8s ingresses, only works when running in k8s
 
 Global Flags:
   -c, --config string   config file (default is $HOME/.checks.yaml)
@@ -207,6 +208,38 @@ And deploy the service using the following command:
 ```sh
 helm upgrade --install -n <target_namespace> -f <path/to/your/custom_values.yaml> synthetic-checker ./helm/synthetic-checker
 ```
+
+#### Watching ingress resources
+
+When running as a service in a k8s cluster, the tool can also watch `Ingress` resources and automatically setup checks for them.
+You can annotate your `Ingress` resources to control the checks configuration.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sample-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/server-alias: "test.example.com"
+    synthetic-checker/skip: "false" # set to true to ignore this resource, defaults to false
+    synthetic-checker/interval: "60s" # defaults to 30s
+    synthetic-checker/ports: "80,443" # defaults to 443
+spec:
+  ingressClassName: nginx-example
+  rules:
+  - host: "foo.bar.com"
+    http:
+      paths:
+      - path: /testpath
+        pathType: Prefix
+        backend:
+          service:
+            name: test
+            port:
+              number: 80
+```
+
+By default, the tool will setup DNS and connection checks for each ingress. It will check that all the host names resolve and will check if port 443 is reacheable on the ingress's LBs.
 
 #### HA modes
 
