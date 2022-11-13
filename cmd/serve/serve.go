@@ -78,6 +78,10 @@ func New(cfg *config.Config) *cobra.Command {
 
 			if watchIngresses {
 				go func() {
+					// TODO: figure out what to do in HA mode:
+					// - pass the haMode var and risk split brain (current)
+					// - move this code block above, using the same leader election has the checker
+					// - always set to false so all intances watch ingresses and keep their checks in sync
 					err := ingresswatcher.Start(chkr, fmt.Sprintf(":%d", srvCfg.HTTP.Port+1), fmt.Sprintf(":%d", srvCfg.HTTP.Port+2), haMode)
 					if err != nil {
 						panic(err)

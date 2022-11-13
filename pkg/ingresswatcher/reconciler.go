@@ -142,6 +142,26 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 	ports := getPorts(ingress)
 
 	// setup DNS checks for all ingress Hostnames
+	if err := r.setDNSChecks(hosts, ports, interval); err != nil {
+		return err
+	}
+
+	// setup connection checks for all ingress LBs
+	lbs := getLBs(ingress)
+	if err := r.setConnChecks(lbs, ports, interval); err != nil {
+		return err
+	}
+
+	// setup http checks
+	endpoints := getEndpoints(ingress)
+	if err := r.setHTTPChecks(hosts, ports, endpoints, interval); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *IngressReconciler) setDNSChecks(hosts, ports []string, interval time.Duration) error {
 	for i, host := range hosts {
 		name := host + "-dns"
 		check, err := checks.NewDNSCheck(name,
@@ -158,8 +178,11 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 		r.Checker.AddCheck(name, check)
 	}
 
-	// setup connection checks for all ingress LBs
-	for i, lb := range getLBs(ingress) {
+	return nil
+}
+
+func (r *IngressReconciler) setConnChecks(lbs, ports []string, interval time.Duration) error {
+	for i, lb := range lbs {
 		for _, port := range ports {
 			lb = lb + port
 			name := lb + "-conn"
@@ -178,12 +201,14 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 		}
 	}
 
-	endpoints := getEndpoints(ingress)
+	return nil
+}
+
+func (r *IngressReconciler) setHTTPChecks(hosts, ports, endpoints []string, interval time.Duration) error {
 	if len(endpoints) == 0 {
 		return nil
 	}
 
-	// setup http checks
 	for i, host := range hosts {
 		for _, port := range ports {
 			for _, endpoint := range endpoints {
@@ -217,11 +242,13 @@ func (r *IngressReconciler) cleanup(ingress *netv1.Ingress) error {
 	hosts := getHosts(ingress)
 	ports := getPorts(ingress)
 
+	// cleanup DNS checks
 	for _, host := range hosts {
 		name := host + "-dns"
 		r.Checker.DelCheck(name)
 	}
 
+	// cleanup connection checks
 	for _, lb := range getLBs(ingress) {
 		for _, port := range ports {
 			name := lb + port + "-conn"
@@ -234,7 +261,7 @@ func (r *IngressReconciler) cleanup(ingress *netv1.Ingress) error {
 		return nil
 	}
 
-	// setup http checks
+	// cleanup http checks
 	for _, host := range hosts {
 		for _, port := range ports {
 			for _, endpoint := range endpoints {
