@@ -87,8 +87,7 @@ func (c *k8sCheck) Execute(ctx context.Context) (bool, error) {
 			errs = append(errs, err)
 			continue
 		}
-		ok := res.Status == status.CurrentStatus
-		if !ok {
+		if ok := res.Status == status.CurrentStatus; !ok {
 			allOK = false
 			errs = append(errs, fmt.Errorf("%s: wrong resource state: %s - %s", u.GetName(), res.Status, res.Message))
 		}
@@ -142,14 +141,14 @@ func (c *k8sCheck) do(ctx context.Context) (*unstructured.UnstructuredList, erro
 		var err error
 		opts.LabelSelector, err = labels.Parse(c.config.LabelSelector)
 		if err != nil {
-			return nil, fmt.Errorf("invalid label selector")
+			return nil, fmt.Errorf("invalid label selector: %w", err)
 		}
 	}
 	if c.config.FieldSelector != "" {
 		var err error
 		opts.FieldSelector, err = fields.ParseSelector(c.config.LabelSelector)
 		if err != nil {
-			return nil, fmt.Errorf("invalid field selector")
+			return nil, fmt.Errorf("invalid field selector: %w", err)
 		}
 	}
 	if err := c.client.List(ctx, ul, opts); err != nil {

@@ -48,3 +48,6 @@ k8sChecks:
     labelSelector: "k8s-app=kube-apiserver"
     interval: 30s
     initialDelay: 4s
+  certs:
+    kind: "Certificate.v1.cert-manager.io"
+    interval: 5m
