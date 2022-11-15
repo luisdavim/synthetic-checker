@@ -7,6 +7,7 @@ The tool supports the following types of checks:
 - gRPC
 - DNS
 - Connection
+- TLS/Certificate
 - Kubernetes
 
 More types of checks can be added in the future.
