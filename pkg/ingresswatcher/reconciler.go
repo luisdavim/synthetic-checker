@@ -199,9 +199,10 @@ func (r *IngressReconciler) setConnChecks(lbs, ports, hosts []string, tls, noTLS
 				name = lb + "-tls"
 				check, err = checks.NewTLSCheck(name,
 					config.TLSCheck{
-						Address:            lb,
-						HostNames:          hosts,
-						InsecureSkipVerify: true,
+						Address:             lb,
+						HostNames:           hosts,
+						InsecureSkipVerify:  true,
+						SkipChainValidation: true,
 						BaseCheck: config.BaseCheck{
 							InitialDelay: time.Duration(i) + 1*time.Second,
 							Interval:     interval,

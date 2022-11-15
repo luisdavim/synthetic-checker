@@ -65,10 +65,11 @@ type GRPCCheck struct {
 }
 
 type TLSCheck struct {
-	Address            string        `mapstructure:"address,omitempty"`
-	HostNames          []string      `mapstructure:"hostNames,omitempty"`
-	ExpiryThreshold    time.Duration `mapstructure:"expiryThreshold,omitempty"`
-	InsecureSkipVerify bool          `mapstructure:"insecureSkipVerify"`
+	Address             string        `mapstructure:"address,omitempty"`
+	HostNames           []string      `mapstructure:"hostNames,omitempty"`
+	ExpiryThreshold     time.Duration `mapstructure:"expiryThreshold,omitempty"`
+	InsecureSkipVerify  bool          `mapstructure:"insecureSkipVerify"`
+	SkipChainValidation bool          `mapstructure:"skipChainValidation,omitempty"`
 	BaseCheck
 }
 

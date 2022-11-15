@@ -69,7 +69,11 @@ func (c *tlsCheck) Execute(ctx context.Context) (bool, error) {
 	defer conn.Close()
 
 	for _, hostName := range c.config.HostNames {
-		err = conn.VerifyHostname(hostName)
+		if c.config.SkipChainValidation {
+			err = conn.ConnectionState().PeerCertificates[0].VerifyHostname(hostName)
+		} else {
+			err = conn.VerifyHostname(hostName)
+		}
 		if err != nil {
 			return false, fmt.Errorf("hostname %s doesn't match with certificate: %w", hostName, err)
 		}
