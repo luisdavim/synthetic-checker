@@ -16,6 +16,9 @@ connChecks:
     address: "1.1.1.1:53"
     protocol: udp
     interval: 15s
+tlsChecks:
+  google:
+    address: "www.google.com"
 k8sChecks:
   coredns:
     kind: "Deployment.v1.apps"

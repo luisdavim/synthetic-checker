@@ -85,6 +85,15 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 		}
 	}
 
+	// setup TLS checks
+	for name, config := range cfg.TLSChecks {
+		var err error
+		runner.checks[name+"-tls"], err = checks.NewTLSCheck(name, config)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// setup gRPC checks
 	for name, config := range cfg.GRPCChecks {
 		var err error

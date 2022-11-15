@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
+	"github.com/luisdavim/synthetic-checker/pkg/api"
 	"github.com/luisdavim/synthetic-checker/pkg/checker"
 	"github.com/luisdavim/synthetic-checker/pkg/checks"
 	"github.com/luisdavim/synthetic-checker/pkg/config"
@@ -22,6 +23,7 @@ import (
 const (
 	finalizerName       = "synthetic-checker/finalizer"
 	skipAnnotation      = "synthetic-checker/skip"
+	tlsAnnotation       = "synthetic-checker/tls"
 	portsAnnotation     = "synthetic-checker/ports"
 	intervalAnnotation  = "synthetic-checker/interval"
 	endpointsAnnotation = "synthetic-checker/endpoints"
@@ -148,7 +150,8 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 
 	// setup connection checks for all ingress LBs
 	lbs := getLBs(ingress)
-	if err := r.setConnChecks(lbs, ports, interval); err != nil {
+	tls, _ := strconv.ParseBool(ingress.Annotations[tlsAnnotation])
+	if err := r.setConnChecks(lbs, ports, hosts, tls, interval); err != nil {
 		return err
 	}
 
@@ -181,19 +184,36 @@ func (r *IngressReconciler) setDNSChecks(hosts, ports []string, interval time.Du
 	return nil
 }
 
-func (r *IngressReconciler) setConnChecks(lbs, ports []string, interval time.Duration) error {
+func (r *IngressReconciler) setConnChecks(lbs, ports, hosts []string, tls bool, interval time.Duration) error {
 	for i, lb := range lbs {
 		for _, port := range ports {
 			lb = lb + port
 			name := lb + "-conn"
-			check, err := checks.NewConnCheck(name,
-				config.ConnCheck{
-					Address: lb,
-					BaseCheck: config.BaseCheck{
-						InitialDelay: time.Duration(i) + 1*time.Second,
-						Interval:     interval,
-					},
-				})
+			var (
+				err   error
+				check api.Check
+			)
+			if port == ":443" || tls {
+				name = lb + "-tls"
+				check, err = checks.NewTLSCheck(name,
+					config.TLSCheck{
+						Address:   lb,
+						HostNames: hosts,
+						BaseCheck: config.BaseCheck{
+							InitialDelay: time.Duration(i) + 1*time.Second,
+							Interval:     interval,
+						},
+					})
+			} else {
+				check, err = checks.NewConnCheck(name,
+					config.ConnCheck{
+						Address: lb,
+						BaseCheck: config.BaseCheck{
+							InitialDelay: time.Duration(i) + 1*time.Second,
+							Interval:     interval,
+						},
+					})
+			}
 			if err != nil {
 				return err
 			}
@@ -249,9 +269,13 @@ func (r *IngressReconciler) cleanup(ingress *netv1.Ingress) error {
 	}
 
 	// cleanup connection checks
+	tls, _ := strconv.ParseBool(ingress.Annotations[tlsAnnotation])
 	for _, lb := range getLBs(ingress) {
 		for _, port := range ports {
 			name := lb + port + "-conn"
+			if port == ":443" || tls {
+				name = lb + port + "-tls"
+			}
 			r.Checker.DelCheck(name)
 		}
 	}

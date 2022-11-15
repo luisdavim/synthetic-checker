@@ -12,6 +12,7 @@ type Config struct {
 	K8sChecks  map[string]K8sCheck  `mapstructure:"k8sChecks"`
 	ConnChecks map[string]ConnCheck `mapstructure:"connChecks"`
 	GRPCChecks map[string]GRPCCheck `mapstructure:"grpcChecks"`
+	TLSChecks  map[string]TLSCheck  `mapstructure:"tlsChecks"`
 }
 
 // BaseCheck holds the common properties across checks
@@ -60,6 +61,14 @@ type GRPCCheck struct {
 	Verbose       bool          `mapstructure:"verbose,omitempty"`
 	GZIP          bool          `mapstructure:"gzip,omitempty"`
 	SPIFFE        bool          `mapstructure:"spiffe,omitempty"`
+	BaseCheck
+}
+
+type TLSCheck struct {
+	Address            string        `mapstructure:"address,omitempty"`
+	HostNames          []string      `mapstructure:"hostNames,omitempty"`
+	ExpiryThreshold    time.Duration `mapstructure:"expiryThreshold,omitempty"`
+	InsecureSkipVerify bool          `mapstructure:"insecureSkipVerify"`
 	BaseCheck
 }
 
