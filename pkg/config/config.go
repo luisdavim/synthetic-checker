@@ -45,31 +45,52 @@ type HTTPCheck struct {
 }
 
 type GRPCCheck struct {
-	Address       string        `mapstructure:"address,omitempty"`
-	Service       string        `mapstructure:"service,omitempty"`
-	UserAgent     string        `mapstructure:"userAgent,omitempty"`
-	ConnTimeout   time.Duration `mapstructure:"connTimeout,omitempty"`
-	RPCHeaders    metadata.MD   `mapstructure:"RPCHeaders,omitempty"`
-	RPCTimeout    time.Duration `mapstructure:"rpcTimeout,omitempty"`
-	TLS           bool          `mapstructure:"tls,omitempty"`
-	TLSNoVerify   bool          `mapstructure:"tlsNoVerify,omitempty"`
-	TLSCACert     string        `mapstructure:"tlscaCert,omitempty"`
-	TLSClientCert string        `mapstructure:"tlsClientCert,omitempty"`
-	TLSClientKey  string        `mapstructure:"tlsClientKey,omitempty"`
-	TLSServerName string        `mapstructure:"tlsServerName,omitempty"`
-	ALTS          bool          `mapstructure:"alts,omitempty"`
-	Verbose       bool          `mapstructure:"verbose,omitempty"`
-	GZIP          bool          `mapstructure:"gzip,omitempty"`
-	SPIFFE        bool          `mapstructure:"spiffe,omitempty"`
+	// Address is the IP address or host to connect to
+	Address string `mapstructure:"address,omitempty"`
+	// Service name to check
+	Service string `mapstructure:"service,omitempty"`
+	// UserAgent defines the user-agent header value of health check requests
+	UserAgent string `mapstructure:"userAgent,omitempty"`
+	// ConnTimeout is the timeout for establishing connection
+	ConnTimeout time.Duration `mapstructure:"connTimeout,omitempty"`
+	// RPCHeaders sends metadata in the RPC request context
+	RPCHeaders metadata.MD `mapstructure:"RPCHeaders,omitempty"`
+	// RPCTimeout is the timeout for health check rpc
+	RPCTimeout time.Duration `mapstructure:"rpcTimeout,omitempty"`
+	// TLS indicates whether TLS should be used
+	TLS bool `mapstructure:"tls,omitempty"`
+	// TLSNoVerify makes the check skip the cert validation
+	TLSNoVerify bool `mapstructure:"tlsNoVerify,omitempty"`
+	// TLSCACert is the path to file containing CA certificates
+	TLSCACert string `mapstructure:"tlscaCert,omitempty"`
+	// TLSClientCert is the client certificate for authenticating to the server
+	TLSClientCert string `mapstructure:"tlsClientCert,omitempty"`
+	// TLSClientKey is the private key for for authenticating to the server
+	TLSClientKey string `mapstructure:"tlsClientKey,omitempty"`
+	// TLSServerName overrides the hostname used to verify the server certificate
+	TLSServerName string `mapstructure:"tlsServerName,omitempty"`
+	// ALTS indicates whether ALTS transport should be used
+	ALTS bool `mapstructure:"alts,omitempty"`
+	// GZIP indicates whether to use GZIPCompressor for requests and GZIPDecompressor for response
+	GZIP bool `mapstructure:"gzip,omitempty"`
+	// SPIFFE indicates if SPIFFE Workload API should be used to retrieve TLS credentials
+	SPIFFE bool `mapstructure:"spiffe,omitempty"`
 	BaseCheck
 }
 
 type TLSCheck struct {
-	Address             string        `mapstructure:"address,omitempty"`
-	HostNames           []string      `mapstructure:"hostNames,omitempty"`
-	ExpiryThreshold     time.Duration `mapstructure:"expiryThreshold,omitempty"`
-	InsecureSkipVerify  bool          `mapstructure:"insecureSkipVerify"`
-	SkipChainValidation bool          `mapstructure:"skipChainValidation,omitempty"`
+	// Address is the IP address or host to connect to
+	Address string `mapstructure:"address,omitempty"`
+	// HostNames is a list of host names that the certificate should be valid for
+	// defaults to the value of Address
+	HostNames []string `mapstructure:"hostNames,omitempty"`
+	// ExpiryThreshold is the minimum amount of time that the certificate should be valid for
+	// defaults to 168h (7 days)
+	ExpiryThreshold time.Duration `mapstructure:"expiryThreshold,omitempty"`
+	// InsecureSkipVerify indicates whether the certificate should be checked when establishing the connection
+	InsecureSkipVerify bool `mapstructure:"insecureSkipVerify"`
+	// SkipChainValidation limita the certificate validation to the leaf certificate
+	SkipChainValidation bool `mapstructure:"skipChainValidation,omitempty"`
 	BaseCheck
 }
 
@@ -82,8 +103,8 @@ type DNSCheck struct {
 }
 
 type ConnCheck struct {
-	// AddressIP address or host to ping
-	// see the net.Dial doccs for details
+	// Address is the IP address or host to ping
+	// see the net.Dial docs for details
 	Address string `mapstructure:"address,omitempty"`
 	// Protocol to use, defaults to tcp
 	// Known protocols are "tcp", "tcp4" (IPv4-only), "tcp6" (IPv6-only),

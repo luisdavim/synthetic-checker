@@ -110,6 +110,10 @@ connChecks:
   cfDNS:
     address: "1.1.1.1:53"
     protocol: udp
+tlsChecks:
+  google:
+    address: "www.google.com"
+    expiryThreshold: 96h
 k8sChecks:
   coredns: # a specific deployment
     kind: "Deployment.v1.apps"
@@ -225,6 +229,9 @@ metadata:
     synthetic-checker/skip: "false" # set to true to ignore this resource, defaults to false
     synthetic-checker/interval: "60s" # defaults to 30s
     synthetic-checker/ports: "80,443" # defaults to 443
+    synthetic-checker/TLS: "false" # set this if all ports use TLS, defaults to false and only port 443 will use a TLS check
+    synthetic-checker/noTLS: "false" # set this to disable TLS checks and use connection checks only, defaults to false
+    synthetic-checker/endpoints: "/healthz,/readyz" # comma separated list of endpoints to build urls for HTTP checks
 spec:
   ingressClassName: nginx-example
   rules:
@@ -240,7 +247,7 @@ spec:
               number: 80
 ```
 
-By default, the tool will setup DNS and connection checks for each ingress. It will check that all the host names resolve and will check if port 443 is reacheable on the ingress's LBs.
+By default, the tool will setup DNS and connection checks for each ingress. It will check that all the host names resolve and will check if port 443 is reacheable on the ingress's LBs and that the TLS certFile is not about to expire.
 
 #### HA modes
 
