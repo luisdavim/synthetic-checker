@@ -31,6 +31,15 @@ const (
 	defaultLBPort       = ":443"
 )
 
+var (
+	// TODO: allow the user to extend this list
+	additionalHostsAnnotations = []string{
+		"nginx.ingress.kubernetes.io/server-alias",
+		"external-dns.alpha.kubernetes.io/hostname",
+		"external-dns.alpha.kubernetes.io/internal-hostname",
+	}
+)
+
 // IngressReconciler reconciles a Ingress object
 type IngressReconciler struct {
 	client.Client
@@ -359,13 +368,14 @@ func getHosts(ingress *netv1.Ingress) []string {
 		}
 	}
 
-	// TODO: allow the user to pass a list of annotations for this
-	if aliases, ok := ingress.Annotations["nginx.ingress.kubernetes.io/server-alias"]; ok {
-		for _, host := range strings.Split(aliases, ",") {
-			host = strings.TrimSpace(host)
-			if _, ok := found[host]; !ok && host != "" {
-				found[host] = struct{}{}
-				hosts = append(hosts, host)
+	for _, annotation := range additionalHostsAnnotations {
+		if aliases, ok := ingress.Annotations[annotation]; ok {
+			for _, host := range strings.Split(aliases, ",") {
+				host = strings.TrimSpace(host)
+				if _, ok := found[host]; !ok && host != "" {
+					found[host] = struct{}{}
+					hosts = append(hosts, host)
+				}
 			}
 		}
 	}
