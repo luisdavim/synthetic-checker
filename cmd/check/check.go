@@ -50,6 +50,14 @@ func New(cfg *config.Config) *cobra.Command {
 
 			status := chkr.GetStatus()
 
+			if colour {
+				o, _ := os.Stdout.Stat()
+				if (o.Mode() & os.ModeCharDevice) != os.ModeCharDevice {
+					// output is not a terminal
+					colour = false
+				}
+			}
+
 			if plain {
 				colour = false
 				prettyJSON = false
