@@ -50,6 +50,11 @@ func New(cfg *config.Config) *cobra.Command {
 
 			status := chkr.GetStatus()
 
+			if plain {
+				colour = false
+				prettyJSON = false
+			}
+
 			if colour {
 				o, _ := os.Stdout.Stat()
 				if (o.Mode() & os.ModeCharDevice) != os.ModeCharDevice {
@@ -58,10 +63,6 @@ func New(cfg *config.Config) *cobra.Command {
 				}
 			}
 
-			if plain {
-				colour = false
-				prettyJSON = false
-			}
 			var buf strings.Builder
 			enc := json.NewEncoder(&buf)
 			if prettyJSON {
