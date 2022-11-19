@@ -17,6 +17,7 @@ type connCheck struct {
 	dialer *net.Dialer
 }
 
+// NewConnCheck returns a connectivity check for the given configuration
 func NewConnCheck(name string, config config.ConnCheck) (api.Check, error) {
 	if name == "" {
 		return nil, fmt.Errorf("CheckName must not be empty")

@@ -27,6 +27,8 @@ type k8sCheck struct {
 
 var k8sClient client.Reader
 
+// NewK8sCheck returns a Kubernetes resource status check for the given configuration
+// The status of a resource is determined by inspecting its status conditions
 func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error) {
 	if name == "" {
 		return nil, fmt.Errorf("CheckName must not be empty")

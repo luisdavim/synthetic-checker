@@ -30,7 +30,8 @@ var (
 	}, []string{"name"})
 )
 
-// CheckRunner reprents the main checker responsible for executing all the checks
+// CheckRunner reprents the main checker
+// responsible for scheduling and executing all the checks
 type CheckRunner struct {
 	checks api.Checks
 	status api.Statuses
@@ -190,6 +191,7 @@ func (runner *CheckRunner) Run(ctx context.Context) {
 	}
 }
 
+// run executes the check
 func (runner *CheckRunner) run(ctx context.Context, name string, check api.Check, quit <-chan struct{}) {
 	// ctx, _ = context.WithCancel(ctx)
 	go func() {

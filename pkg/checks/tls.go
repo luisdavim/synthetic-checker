@@ -18,6 +18,9 @@ type tlsCheck struct {
 	tlsOpts *tls.Config
 }
 
+// NewTLSCheck returns a TLS connectivity check
+// that validates is the address is reachable and presents a valid certificate
+// it will also verify if the certificate is about to expire
 func NewTLSCheck(name string, config config.TLSCheck) (api.Check, error) {
 	if name == "" {
 		return nil, fmt.Errorf("CheckName must not be empty")

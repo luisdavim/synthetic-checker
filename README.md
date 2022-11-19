@@ -16,6 +16,7 @@ Checks can be executed periodically and asynchronously in the background.
 
 To make development easier, a [Makefile](./Makefile) is provided, run `make` with no arguments to get a list of all available options.
 To run all the linters, tests and build a binary, run `make build`
+You can find the development docs in the [docs](./docs) folder.
 
 ## Usage
 
@@ -25,7 +26,7 @@ When running in service mode, the tool also exposes metrics in the Prometheus fo
 When running in the cli mode, the checks are stil executed in parallel and the configured `initialDelay` is stil used.
 The cli mode can be used to run as an `init` container or as an `helm` pre or post hook as a pre-flight check or a post run validation. Or in a CI pipeline.
 
-Check the `--help` flag on each sub-command to see all available options:
+See the [usage docs](./usage) and check the `--help` flag on each sub-command to see all available options:
 
 ```console
 $ go run main.go -h

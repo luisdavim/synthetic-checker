@@ -31,14 +31,12 @@ const (
 	defaultLBPort       = ":443"
 )
 
-var (
-	// TODO: allow the user to extend this list
-	additionalHostsAnnotations = []string{
-		"nginx.ingress.kubernetes.io/server-alias",
-		"external-dns.alpha.kubernetes.io/hostname",
-		"external-dns.alpha.kubernetes.io/internal-hostname",
-	}
-)
+// TODO: allow the user to extend this list
+var additionalHostsAnnotations = []string{
+	"nginx.ingress.kubernetes.io/server-alias",
+	"external-dns.alpha.kubernetes.io/hostname",
+	"external-dns.alpha.kubernetes.io/internal-hostname",
+}
 
 // IngressReconciler reconciles a Ingress object
 type IngressReconciler struct {

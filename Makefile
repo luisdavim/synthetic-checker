@@ -46,9 +46,9 @@ WHITE  := $(shell tput -Txterm setaf 7)
 CYAN   := $(shell tput -Txterm setaf 6)
 RESET  := $(shell tput -Txterm sgr0)
 
-.PHONY: all test fmt vet build vendor deps update-deps imports release tag
+.PHONY: all test fmt vet build vendor deps update-deps imports release tag docs
 
-all: fmt lint build
+all: fmt lint build docs
 
 ## Help:
 help: ## Show this help.
@@ -205,9 +205,6 @@ helm-test: k8s_schemas ## Test the helm chart
 		  helm template ./helm/$(PROJECTNAME) --namespace dev --values $$values | kubeconform $(KUBECONFORM_FLGS); \
 		done
 
-helm-docs: ## Generate helm chart docs
-	helm-docs -o README.md
-
 ## Docker:
 docker-build: ## Use the dockerfile to build the container
 	docker build --rm --tag $(BINARY_NAME) .
@@ -220,8 +217,25 @@ docker-release: ## Release the container with tag latest and version
 	docker push $(DOCKER_REGISTRY)$(BINARY_NAME):$(VERSION)
 
 ## Documentation:
-gomarkdoc: ## Use gomarkdoc to generate documentation for eval package
+docs: fmt usagedoc gomarkdoc-pkg gomarkdoc-cmd helm-docs ## Generate project documentation
+	rm -rf docs
+	mkdir -p docs
+	gomarkdoc --output 'docs/{{.Dir}}/README.md' ./...
+	echo -e '\n## Packages\n' >> docs/README.md; for d in $$(find ./docs -type f -name '*.md' | sort); do path="$${d##./docs/}"; name="$${path%/*}"; echo "- [$${name/README.md/$(PROJECTNAME)}]($${path})" >> docs/README.md; done
+
+gomarkdoc-%: ## Use gomarkdoc to generate documentation for packages in the % folder
+	[ ! -d "$(*)" ] || for d in $(*)/*/; do gomarkdoc --output "$${d}README.md" "$(REPO)/$${d%/*}"; done
+	echo -e '# Packages\n' > $(*)/README.md; for d in $$(find ./$(*)/ -type f -name '*.md' | sort); do path="$${d##./$(*)/}"; name="$${path%/*}"; echo "- [$${name/README.md/$(PROJECTNAME)}]($${path})" >> $(*)/README.md; done
+
+gomarkdoc: ## Use gomarkdoc to generate documentation for the whole project
 	gomarkdoc --output '{{.Dir}}/README.md' ./...
+
+helm-docs: ## Generate helm chart docs
+	helm-docs -o README.md
+
+usagedoc: ## Generate CLI documentation
+	rm -rf usage/*.md
+	go run docs.go ./usage
 
 changelog: ## Generate changelog file
 	git-chglog --no-case -o $(CHANGELOG_FILE) --next-tag $(NEXT_VERSION)

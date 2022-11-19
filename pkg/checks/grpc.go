@@ -62,6 +62,7 @@ func buildCredentials(skipVerify bool, caCerts, clientCert, clientKey, serverNam
 	return credentials.NewTLS(&cfg), nil
 }
 
+// NewGrpcCheck returns a gRPC health check for the given configuration
 func NewGrpcCheck(name string, config config.GRPCCheck) (api.Check, error) {
 	if name == "" {
 		return nil, fmt.Errorf("CheckName must not be empty")

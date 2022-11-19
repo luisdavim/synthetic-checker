@@ -15,6 +15,7 @@ func mustBindPFlag(key string, f *flag.Flag) {
 	}
 }
 
+// Init injects the server flags into a cobra command
 func Init(cmd *cobra.Command) {
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("/etc/config")

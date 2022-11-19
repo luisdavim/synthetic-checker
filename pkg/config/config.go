@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// Config represents the checks configuration
 type Config struct {
 	HTTPChecks map[string]HTTPCheck `mapstructure:"httpChecks"`
 	DNSChecks  map[string]DNSCheck  `mapstructure:"dnsChecks"`
@@ -44,6 +45,7 @@ type HTTPCheck struct {
 	BaseCheck
 }
 
+// GRPCCheck configures a gRPC health check probe
 type GRPCCheck struct {
 	// Address is the IP address or host to connect to
 	Address string `mapstructure:"address,omitempty"`
@@ -78,6 +80,7 @@ type GRPCCheck struct {
 	BaseCheck
 }
 
+// TLSCheck configures a TLS connection check, including certificate validation
 type TLSCheck struct {
 	// Address is the IP address or host to connect to
 	Address string `mapstructure:"address,omitempty"`
@@ -94,6 +97,7 @@ type TLSCheck struct {
 	BaseCheck
 }
 
+// DNSCheck configures a probe to check if a DNS record resolves
 type DNSCheck struct {
 	// DNS name to check
 	Host string `mapstructure:"host,omitempty"`
@@ -102,6 +106,7 @@ type DNSCheck struct {
 	BaseCheck
 }
 
+// ConnCheck configures a conntivity check
 type ConnCheck struct {
 	// Address is the IP address or host to ping
 	// see the net.Dial docs for details
@@ -116,6 +121,8 @@ type ConnCheck struct {
 	BaseCheck
 }
 
+// K8sCheck configures a check that probes the status of a Kubernetes resource.
+// It supports any resource type that uses standard k8s status conditions.
 type K8sCheck struct {
 	// Kind takes the common style of string which may be either `Kind.group.com` or `Kind.version.group.com`
 	Kind string `mapstructure:"kind,omitempty"`

@@ -1,3 +1,5 @@
+// ingresswatcher is a kubernetes controller that watches Ingress resources
+// and configures several checks for each observed ingress.
 package ingresswatcher
 
 import (

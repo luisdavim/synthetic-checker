@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 	"github.com/spf13/viper"
 
 	"github.com/luisdavim/synthetic-checker/cmd/check"
@@ -90,4 +91,13 @@ func initConfig(cfgFile string) (config.Config, error) {
 	}
 
 	return cfg, err
+}
+
+// GenDocs is a helper function to generate the tool's usage documentation
+func GenDocs(docsPath string) {
+	rootCmd := newCmd(nil)
+
+	if err := doc.GenMarkdownTree(rootCmd, docsPath); err != nil {
+		os.Exit(1)
+	}
 }
