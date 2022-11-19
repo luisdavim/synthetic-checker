@@ -11,10 +11,10 @@ Copyright © 2022 NAME HERE \<EMAIL ADDRESS\>
 ## Index
 
 - [func Execute()](<#func-execute>)
-- [func GenDocs(docsPath string)](<#func-gendocs>)
+- [func NewCmd(cfg *config.Config) *cobra.Command](<#func-newcmd>)
 
 
-## func [Execute](<https://github.com/luisdavim/synthetic-checker/blob/main/cmd/root.go#L35>)
+## func [Execute](<https://github.com/luisdavim/synthetic-checker/blob/main/cmd/root.go#L34>)
 
 ```go
 func Execute()
@@ -22,13 +22,11 @@ func Execute()
 
 Execute adds all child commands to the root command and sets flags appropriately. This is called by main.main\(\). It only needs to happen once to the rootCmd.
 
-## func [GenDocs](<https://github.com/luisdavim/synthetic-checker/blob/main/cmd/root.go#L97>)
+## func [NewCmd](<https://github.com/luisdavim/synthetic-checker/blob/main/cmd/root.go#L19>)
 
 ```go
-func GenDocs(docsPath string)
+func NewCmd(cfg *config.Config) *cobra.Command
 ```
-
-GenDocs is a helper function to generate the tool's usage documentation
 
 
 

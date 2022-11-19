@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/cobra/doc"
 	"github.com/spf13/viper"
 
 	"github.com/luisdavim/synthetic-checker/cmd/check"
@@ -17,7 +16,7 @@ import (
 	"github.com/luisdavim/synthetic-checker/pkg/config"
 )
 
-func newCmd(cfg *config.Config) *cobra.Command {
+func NewCmd(cfg *config.Config) *cobra.Command {
 	// cmd represents the base command when called without any subcommands
 	cmd := &cobra.Command{
 		Use:   "synthetic-checker",
@@ -47,7 +46,7 @@ func Execute() {
 		}
 	})
 
-	cmd := newCmd(&cfg)
+	cmd := NewCmd(&cfg)
 	cmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.checks.yaml)")
 
 	if err := cmd.Execute(); err != nil {
@@ -91,13 +90,4 @@ func initConfig(cfgFile string) (config.Config, error) {
 	}
 
 	return cfg, err
-}
-
-// GenDocs is a helper function to generate the tool's usage documentation
-func GenDocs(docsPath string) {
-	rootCmd := newCmd(nil)
-
-	if err := doc.GenMarkdownTree(rootCmd, docsPath); err != nil {
-		os.Exit(1)
-	}
 }
