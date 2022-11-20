@@ -34,3 +34,16 @@ type Status struct {
 }
 
 type Statuses map[string]Status
+
+// Evaluate checks if any or all checks are reported as failed
+func (status Statuses) Evaluate() (allFailed, anyFailed bool) {
+	allFailed = true
+	for _, result := range status {
+		if !result.OK {
+			anyFailed = true
+		} else {
+			allFailed = false
+		}
+	}
+	return
+}

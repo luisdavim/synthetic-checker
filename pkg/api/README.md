@@ -12,6 +12,7 @@ import "github.com/luisdavim/synthetic-checker/pkg/api"
 - [type Checks](<#type-checks>)
 - [type Status](<#type-status>)
 - [type Statuses](<#type-statuses>)
+  - [func (status Statuses) Evaluate() (allFailed, anyFailed bool)](<#func-statuses-evaluate>)
 
 
 ## type [Check](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/api/types.go#L9-L16>)
@@ -61,6 +62,14 @@ type Status struct {
 ```go
 type Statuses map[string]Status
 ```
+
+### func \(Statuses\) [Evaluate](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/api/types.go#L39>)
+
+```go
+func (status Statuses) Evaluate() (allFailed, anyFailed bool)
+```
+
+Evaluate checks if any or all checks are reported as failed
 
 
 

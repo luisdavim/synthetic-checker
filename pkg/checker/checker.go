@@ -40,7 +40,7 @@ type CheckRunner struct {
 	sync.RWMutex
 }
 
-// NewFromConfig creates an re check runner from the given configuration
+// NewFromConfig creates a check runner from the given configuration
 func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 	prometheus.MustRegister(checkStatus, checkDuration)
 	runner := &CheckRunner{
@@ -267,19 +267,7 @@ func (runner *CheckRunner) Check(ctx context.Context) {
 
 func (runner *CheckRunner) Summary() (allFailed, anyFailed bool) {
 	status := runner.GetStatus()
-	return Evaluate(status)
-}
-
-func Evaluate(status api.Statuses) (allFailed, anyFailed bool) {
-	allFailed = true
-	for _, result := range status {
-		if !result.OK {
-			anyFailed = true
-		} else {
-			allFailed = false
-		}
-	}
-	return
+	return status.Evaluate()
 }
 
 // check executes one check and stores the resulting status

@@ -19,7 +19,7 @@ func statusHandler(chkr *checker.CheckRunner, srv *server.Server, failStatus, de
 		statusCode := http.StatusOK
 		checkStatus := chkr.GetStatus()
 		if failStatus != http.StatusOK || degradedStatus != http.StatusOK {
-			allFailed, anyFailed := checker.Evaluate(checkStatus)
+			allFailed, anyFailed := checkStatus.Evaluate()
 			if allFailed {
 				statusCode = failStatus
 			} else if anyFailed {

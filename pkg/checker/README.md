@@ -8,7 +8,6 @@ import "github.com/luisdavim/synthetic-checker/pkg/checker"
 
 ## Index
 
-- [func Evaluate(status api.Statuses) (allFailed, anyFailed bool)](<#func-evaluate>)
 - [type CheckRunner](<#type-checkrunner>)
   - [func NewFromConfig(cfg config.Config) (*CheckRunner, error)](<#func-newfromconfig>)
   - [func (runner *CheckRunner) AddCheck(name string, check api.Check)](<#func-checkrunner-addcheck>)
@@ -22,12 +21,6 @@ import "github.com/luisdavim/synthetic-checker/pkg/checker"
   - [func (runner *CheckRunner) Summary() (allFailed, anyFailed bool)](<#func-checkrunner-summary>)
   - [func (runner *CheckRunner) Syncer(useSSL bool, port int) func(string)](<#func-checkrunner-syncer>)
 
-
-## func [Evaluate](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L273>)
-
-```go
-func Evaluate(status api.Statuses) (allFailed, anyFailed bool)
-```
 
 ## type [CheckRunner](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L35-L41>)
 
@@ -46,7 +39,7 @@ type CheckRunner struct {
 func NewFromConfig(cfg config.Config) (*CheckRunner, error)
 ```
 
-NewFromConfig creates an re check runner from the given configuration
+NewFromConfig creates a check runner from the given configuration
 
 ### func \(\*CheckRunner\) [AddCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L111>)
 

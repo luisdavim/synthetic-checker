@@ -134,67 +134,6 @@ func TestChecker(t *testing.T) {
 	}
 }
 
-func TestEvaluate(t *testing.T) {
-	type expected struct {
-		allFailed bool
-		anyFailed bool
-	}
-	tests := []struct {
-		name     string
-		status   api.Statuses
-		expected expected
-	}{
-		{
-			name: "all OK",
-			status: api.Statuses{
-				"foo": {
-					OK: true,
-				},
-			},
-			expected: expected{
-				allFailed: false,
-				anyFailed: false,
-			},
-		},
-		{
-			name: "all KO",
-			status: api.Statuses{
-				"foo": {
-					OK: false,
-				},
-			},
-			expected: expected{
-				allFailed: true,
-				anyFailed: true,
-			},
-		},
-		{
-			name: "one failed",
-			status: api.Statuses{
-				"foo": {
-					OK: true,
-				},
-				"bar": {
-					OK: false,
-				},
-			},
-			expected: expected{
-				allFailed: false,
-				anyFailed: true,
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			allFailed, anyFailed := Evaluate(tt.status)
-			if allFailed != tt.expected.allFailed || anyFailed != tt.expected.anyFailed {
-				t.Errorf("unexpected result, wanted: %v,%v; got: %v,%v", tt.expected.allFailed, tt.expected.anyFailed, allFailed, anyFailed)
-			}
-		})
-	}
-}
-
 func TestSync(t *testing.T) {
 	tests := []struct {
 		name     string
