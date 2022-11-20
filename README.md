@@ -206,13 +206,13 @@ make docker-build
 make docker-release # add -e DOCKER_REGISTRY="my.reg.com" to override Docker registry
 ```
 
-Create a helm values file with your configuration overrides, you can see an example in [helm/synthetic-checker/ci/with_checks.yaml](./helm/synthetic-checker/ci/with_checks.yaml),
-Or have a look at the default [values](./helm/synthetic-checker/values.yaml) to see all the available options.
+Create a helm values file with your configuration overrides, you can see an example in [charts/synthetic-checker/ci/with_checks.yaml](./charts/synthetic-checker/ci/with_checks.yaml),
+Or have a look at the default [values](./charts/synthetic-checker/values.yaml) to see all the available options.
 
 And deploy the service using the following command:
 
 ```sh
-helm upgrade --install -n <target_namespace> -f <path/to/your/custom_values.yaml> synthetic-checker ./helm/synthetic-checker
+helm upgrade --install -n <target_namespace> -f <path/to/your/custom_values.yaml> synthetic-checker ./charts/synthetic-checker
 ```
 
 #### Watching ingress resources
@@ -278,7 +278,7 @@ make docker-build
 Once the image is built, colima makes it available in the Kubernetes cluster and you can install the service using helm:
 
 ```sh
-helm upgrade --install -f helm/synthetic-checker/ci/with_checks.yaml synthetic-checker ./helm/synthetic-checker
+helm upgrade --install -f charts/synthetic-checker/ci/with_checks.yaml synthetic-checker ./charts/synthetic-checker
 ```
 
 To test the service, you can use kubectl port forwarding:
@@ -307,7 +307,7 @@ helm upgrade --namespace monitoring --install kube-stack-prometheus prometheus-c
 Update the synthetic-checker installation to include the Prometheus operator related resources:
 
 ```sh
-helm upgrade --install -f helm/synthetic-checker/ci/with_checks.yaml -f helm/synthetic-checker/ci/with_prom_op.yaml synthetic-checker ./helm/synthetic-checker
+helm upgrade --install -f charts/synthetic-checker/ci/with_checks.yaml -f charts/synthetic-checker/ci/with_prom_op.yaml synthetic-checker ./charts/synthetic-checker
 ```
 
 Connecting to the Prometheus web UI:

@@ -21,6 +21,7 @@ endif
 PROJECTNAME := $(shell basename "$(PWD)")
 REPO := $(shell git config --get remote.origin.url | sed -re 's/.*(\/\/|@)([^ ]*\/[^.]*).*\.git/\2/' -e 's/:/\//')
 BINARY_NAME ?= $(PROJECTNAME)
+CHARTS_DIR ?= ./charts/$(PROJECTNAME)
 VERSION ?= $(shell git describe --tags --always --dirty --match='v*' 2> /dev/null | grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?(-[a-z0-9]+)?$$' || cat $(PWD)/.version 2> /dev/null || echo v0.0.0)
 NEXT_VERSION ?= $(shell svu next)
 
@@ -171,8 +172,8 @@ ifneq ($(SHELLFILES),)
 endif
 
 lint-helm: ## Lint the helm chart
-ifeq ($(shell test -e ./helm/$(PROJECTNAME) && echo -n yes),yes)
-	helm lint ./helm/$(PROJECTNAME)
+ifeq ($(shell test -e $(CHARTS_DIR) && echo -n yes),yes)
+	helm lint $(CHARTS_DIR)
 endif
 
 ## Helm:
@@ -198,11 +199,11 @@ k8s_schemas: ## Get json schemas from CRDs to validate helm templates
 	@[ -e openapi2jsonschema.py.original ] && rm openapi2jsonschema.py.original
 
 helm-test: k8s_schemas ## Test the helm chart
-	helm template ./helm/$(PROJECTNAME)  | kubeconform  $(KUBECONFORM_FLGS)
+	helm template $(CHARTS_DIR)  | kubeconform  $(KUBECONFORM_FLGS)
 	@set -eo pipefail; \
-		for values in ./helm/$(PROJECTNAME)/ci/*.yaml; do \
+		for values in $(CHARTS_DIR)/ci/*.yaml; do \
 		  echo -e "\n$(YELLOW)>>>$(RESET) Testing $(GREEN)Chart$(RESET) with $(CYAN)$$(basename $$values)$(RESET)"; \
-		  helm template ./helm/$(PROJECTNAME) --namespace dev --values $$values | kubeconform $(KUBECONFORM_FLGS); \
+		  helm template $(CHARTS_DIR) --namespace dev --values $$values | kubeconform $(KUBECONFORM_FLGS); \
 		done
 
 ## Docker:
