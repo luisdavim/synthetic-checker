@@ -1,4 +1,4 @@
-FROM golang:1.18-alpine as builder
+FROM golang:1.19-alpine as builder
 
 # deinitializing GOPATH as otherwise go modules don't work properly
 ENV GOPATH=""
