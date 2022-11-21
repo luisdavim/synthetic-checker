@@ -36,6 +36,8 @@ var additionalHostsAnnotations = []string{
 	"nginx.ingress.kubernetes.io/server-alias",
 	"external-dns.alpha.kubernetes.io/hostname",
 	"external-dns.alpha.kubernetes.io/internal-hostname",
+	"dns.alpha.kubernetes.io/external",
+	"dns.alpha.kubernetes.io/internal",
 }
 
 // IngressReconciler reconciles a Ingress object
