@@ -54,3 +54,7 @@ k8sChecks:
   certs:
     kind: "Certificate.v1.cert-manager.io"
     interval: 5m
+  kafkaClusters:
+    kind: "Kafka.v1beta2.kafka.strimzi.io"
+    interval: 30s
+    initialDelay: 5s
