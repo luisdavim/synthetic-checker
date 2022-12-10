@@ -108,6 +108,7 @@ func TestChecker(t *testing.T) {
 			c, err := NewFromConfig(tt.config)
 			defer func() {
 				// avoid panic with the prometheus.MustRegister used in NewFromConfig
+				prometheus.Unregister(checkCount)
 				prometheus.Unregister(checkStatus)
 				prometheus.Unregister(checkDuration)
 			}()
@@ -269,6 +270,7 @@ func TestSync(t *testing.T) {
 			c, err := NewFromConfig(tt.config)
 			defer func() {
 				// avoid panic with the prometheus.MustRegister used in NewFromConfig
+				prometheus.Unregister(checkCount)
 				prometheus.Unregister(checkStatus)
 				prometheus.Unregister(checkDuration)
 			}()

@@ -18,6 +18,11 @@ import (
 )
 
 var (
+	checkCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "check_status_total",
+		Help: "Number of check status occurences",
+	}, []string{"name", "status"})
+
 	checkStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "check_status_up",
 		Help: "Status from the check",
@@ -42,7 +47,7 @@ type CheckRunner struct {
 
 // NewFromConfig creates a check runner from the given configuration
 func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
-	prometheus.MustRegister(checkStatus, checkDuration)
+	prometheus.MustRegister(checkStatus, checkCount, checkDuration)
 	runner := &CheckRunner{
 		checks: make(api.Checks),
 		status: make(api.Statuses),
@@ -168,12 +173,15 @@ func (runner *CheckRunner) updateMetricsFor(name string) {
 		runner.log.Warn().Str("name", name).Msg("status not found")
 		return
 	}
-	checkDuration.With(prometheus.Labels{"name": name}).Observe(float64(status.Duration.Milliseconds()))
+	var statusVal float64
+	statusName := "error"
 	if status.OK {
-		checkStatus.With(prometheus.Labels{"name": name}).Set(1)
-	} else {
-		checkStatus.With(prometheus.Labels{"name": name}).Set(0)
+		statusName = "success"
+		statusVal = 1
 	}
+	checkStatus.With(prometheus.Labels{"name": name}).Set(statusVal)
+	checkCount.With(prometheus.Labels{"name": name, "status": statusName}).Inc()
+	checkDuration.With(prometheus.Labels{"name": name}).Observe(float64(status.Duration.Milliseconds()))
 }
 
 // Start schedules all the checks, running them periodically in the background, according to their configuration
