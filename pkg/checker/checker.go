@@ -126,7 +126,7 @@ func (runner *CheckRunner) AddCheck(name string, check api.Check) {
 	runner.checks[name] = check
 	if !found {
 		runner.stop[name] = make(chan struct{})
-		runner.run(context.Background(), name, check, runner.stop[name])
+		runner.run(context.Background(), name)
 	}
 	runner.Unlock()
 }
@@ -193,28 +193,28 @@ func (runner *CheckRunner) Start() context.CancelFunc {
 
 // Run schedules all the checks, running them periodically in the background, according to their configuration
 func (runner *CheckRunner) Run(ctx context.Context) {
-	for name, check := range runner.checks {
+	for name := range runner.checks {
 		runner.stop[name] = make(chan struct{})
-		runner.run(ctx, name, check, runner.stop[name])
+		runner.run(ctx, name)
 	}
 }
 
 // run executes the check
-func (runner *CheckRunner) run(ctx context.Context, name string, check api.Check, quit <-chan struct{}) {
+func (runner *CheckRunner) run(ctx context.Context, name string) {
 	// ctx, _ = context.WithCancel(ctx)
 	go func() {
-		time.Sleep(check.InitialDelay())
-		runner.check(ctx, name, check)
-		ticker := time.NewTicker(check.Interval())
+		time.Sleep(runner.checks[name].InitialDelay())
+		runner.check(ctx, name)
+		ticker := time.NewTicker(runner.checks[name].Interval())
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
-				runner.check(ctx, name, check)
+				runner.check(ctx, name)
 			case <-ctx.Done():
 				runner.log.Info().Str("name", name).Msg("stopping checks")
 				return
-			case <-quit:
+			case <-runner.stop[name]:
 				runner.log.Info().Str("name", name).Msg("got quit signal stopping checks")
 				return
 			}
@@ -262,13 +262,13 @@ func (runner *CheckRunner) Syncer(useSSL bool, port int) func(string) {
 // Check runs all the checks in parallel and waits for them to complete
 func (runner *CheckRunner) Check(ctx context.Context) {
 	var wg sync.WaitGroup
-	for name, check := range runner.checks {
+	for name := range runner.checks {
 		wg.Add(1)
 		go func(name string, check api.Check) {
 			defer wg.Done()
 			time.Sleep(check.InitialDelay())
-			runner.check(ctx, name, check)
-		}(name, check)
+			runner.check(ctx, name)
+		}(name, runner.checks[name])
 	}
 	wg.Wait()
 }
@@ -279,12 +279,12 @@ func (runner *CheckRunner) Summary() (allFailed, anyFailed bool) {
 }
 
 // check executes one check and stores the resulting status
-func (runner *CheckRunner) check(ctx context.Context, name string, check api.Check) {
+func (runner *CheckRunner) check(ctx context.Context, name string) {
 	var err error
 	status, _ := runner.GetStatusFor(name)
 	status.Error = ""
 	status.Timestamp = time.Now()
-	status.OK, err = check.Execute(ctx)
+	status.OK, err = runner.checks[name].Execute(ctx)
 	if err != nil {
 		status.Error = err.Error()
 	}
