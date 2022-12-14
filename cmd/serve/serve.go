@@ -14,22 +14,6 @@ import (
 	"github.com/luisdavim/synthetic-checker/pkg/server"
 )
 
-func statusHandler(chkr *checker.CheckRunner, srv *server.Server, failStatus, degradedStatus int) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		statusCode := http.StatusOK
-		checkStatus := chkr.GetStatus()
-		if failStatus != http.StatusOK || degradedStatus != http.StatusOK {
-			allFailed, anyFailed := checkStatus.Evaluate()
-			if allFailed {
-				statusCode = failStatus
-			} else if anyFailed {
-				statusCode = degradedStatus
-			}
-		}
-		srv.JSONResponse(w, r, checkStatus, statusCode)
-	}
-}
-
 func New(cfg *config.Config) *cobra.Command {
 	var (
 		failStatus     int
@@ -89,15 +73,8 @@ func New(cfg *config.Config) *cobra.Command {
 				}()
 			}
 
-			routes := server.Routes{
-				"/": {
-					Func:    statusHandler(chkr, srv, failStatus, degradedStatus),
-					Methods: []string{"GET"},
-					Name:    "status",
-				},
-			}
-			srv.WithRoutes(routes) // Register Routes
-			srv.Run()              // Start Server
+			setRoutes(chkr, srv, failStatus, degradedStatus) // Register Routes
+			srv.Run()                                        // Start Server
 			return nil
 		},
 	}
