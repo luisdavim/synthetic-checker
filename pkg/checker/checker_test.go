@@ -116,7 +116,7 @@ func TestChecker(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 			}
 			for name := range c.checks {
-				c.check(context.TODO(), name, c.checks[name])
+				c.check(context.TODO(), name)
 				actual, ok := c.GetStatusFor(name)
 				if !ok {
 					t.Errorf("missing status for %s", name)
