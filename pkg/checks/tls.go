@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/luisdavim/synthetic-checker/pkg/api"
 	"github.com/luisdavim/synthetic-checker/pkg/config"
 )
@@ -32,14 +34,14 @@ func NewTLSCheck(name string, config config.TLSCheck) (api.Check, error) {
 	if len(host) == 1 {
 		config.Address += ":443"
 	}
-	if config.Interval == 0 {
-		config.Interval = 30 * time.Second
+	if config.Interval.Duration == 0 {
+		config.Interval = metav1.Duration{Duration: 30 * time.Second}
 	}
-	if config.Timeout == 0 {
-		config.Timeout = time.Second
+	if config.Timeout.Duration == 0 {
+		config.Timeout = metav1.Duration{Duration: time.Second}
 	}
-	if config.ExpiryThreshold == 0 {
-		config.ExpiryThreshold = 7 * day
+	if config.ExpiryThreshold.Duration == 0 {
+		config.ExpiryThreshold = metav1.Duration{Duration: 7 * day}
 	}
 	if len(config.HostNames) == 0 {
 		config.HostNames = append(config.HostNames, host[0])
@@ -54,12 +56,12 @@ func NewTLSCheck(name string, config config.TLSCheck) (api.Check, error) {
 }
 
 // Interval indicates how often the check should be performed
-func (c *tlsCheck) Interval() time.Duration {
+func (c *tlsCheck) Interval() metav1.Duration {
 	return c.config.Interval
 }
 
 // InitialDelay indicates how long to delay the check start
-func (c *tlsCheck) InitialDelay() time.Duration {
+func (c *tlsCheck) InitialDelay() metav1.Duration {
 	return c.config.InitialDelay
 }
 
@@ -87,7 +89,7 @@ func (c *tlsCheck) Execute(ctx context.Context) (bool, error) {
 	}
 
 	ttl := time.Until(conn.ConnectionState().PeerCertificates[0].NotAfter)
-	if ttl <= c.config.ExpiryThreshold {
+	if ttl <= c.config.ExpiryThreshold.Duration {
 		return false, fmt.Errorf("the certificate will expire in %s", humanDuration(ttl))
 	}
 

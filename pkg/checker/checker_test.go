@@ -105,7 +105,7 @@ func TestChecker(t *testing.T) {
 			httpmock.Activate()
 			defer httpmock.DeactivateAndReset()
 			httpmock.RegisterResponder(tt.config.HTTPChecks[checkName].Method, tt.config.HTTPChecks[checkName].URL, httpmock.ResponderFromResponse(&tt.response))
-			c, err := NewFromConfig(tt.config)
+			c, err := NewFromConfig(tt.config, false)
 			defer func() {
 				// avoid panic with the prometheus.MustRegister used in NewFromConfig
 				prometheus.Unregister(checkCount)
@@ -156,7 +156,7 @@ func TestSync(t *testing.T) {
     "test-http": {
         "ok": true,
         "timestamp": "2022-10-31T22:43:56.715843212Z",
-        "duration": 918525104,
+        "duration": "1.193667ms",
         "contiguousFailures": 0,
         "timeOfFirstFailure": "0001-01-01T00:00:00Z"
     }
@@ -180,7 +180,7 @@ func TestSync(t *testing.T) {
     "test-http": {
         "error": "Unexpected status code: '500' expected: '200'",
         "timestamp": "2022-10-31T22:43:56.715808368Z",
-        "duration": 918794374,
+        "duration": "659.814ms",
         "contiguousFailures": 1,
         "timeOfFirstFailure": "2022-10-31T22:43:56.715808368Z"
     }
@@ -204,7 +204,7 @@ func TestSync(t *testing.T) {
     "test-dns": {
         "ok": true,
         "timestamp": "2022-10-31T22:43:56.715846962Z",
-        "duration": 27122865,
+        "duration": "22.112042ms",
         "contiguousFailures": 0,
         "timeOfFirstFailure": "0001-01-01T00:00:00Z"
     }
@@ -237,21 +237,21 @@ func TestSync(t *testing.T) {
     "test-conn": {
         "ok": true,
         "timestamp": "2022-10-31T22:43:56.715798368Z",
-        "duration": 267292,
+        "duration": "1.193667ms",
         "contiguousFailures": 0,
         "timeOfFirstFailure": "0001-01-01T00:00:00Z"
     },
     "test-dns": {
         "ok": true,
         "timestamp": "2022-10-31T22:43:56.715846962Z",
-        "duration": 27122865,
+        "duration": "22.112042ms",
         "contiguousFailures": 0,
         "timeOfFirstFailure": "0001-01-01T00:00:00Z"
     },
     "test-http": {
         "ok": true,
         "timestamp": "2022-10-31T22:43:56.715843212Z",
-        "duration": 918525104,
+        "duration": "659.814ms",
         "contiguousFailures": 0,
         "timeOfFirstFailure": "0001-01-01T00:00:00Z"
     }
@@ -267,7 +267,7 @@ func TestSync(t *testing.T) {
 			httpmock.Activate()
 			defer httpmock.DeactivateAndReset()
 			httpmock.RegisterResponder(http.MethodGet, "http://leader:8080/", httpmock.NewStringResponder(http.StatusOK, tt.status))
-			c, err := NewFromConfig(tt.config)
+			c, err := NewFromConfig(tt.config, false)
 			defer func() {
 				// avoid panic with the prometheus.MustRegister used in NewFromConfig
 				prometheus.Unregister(checkCount)

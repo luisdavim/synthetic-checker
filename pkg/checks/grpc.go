@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/encoding/gzip"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/luisdavim/synthetic-checker/pkg/api"
 	"github.com/luisdavim/synthetic-checker/pkg/config"
@@ -70,11 +71,11 @@ func NewGrpcCheck(name string, config config.GRPCCheck) (api.Check, error) {
 	if config.Address == "" {
 		return nil, fmt.Errorf("address must not be empty")
 	}
-	if config.Interval == 0 {
-		config.Interval = 30 * time.Second
+	if config.Interval.Duration == 0 {
+		config.Interval = metav1.Duration{Duration: 30 * time.Second}
 	}
-	if config.Timeout == 0 {
-		config.Timeout = time.Second
+	if config.Timeout.Duration == 0 {
+		config.Timeout = metav1.Duration{Duration: time.Second}
 	}
 
 	dOpts := []grpc.DialOption{
@@ -93,7 +94,7 @@ func NewGrpcCheck(name string, config config.GRPCCheck) (api.Check, error) {
 		creds := alts.NewServerCreds(alts.DefaultServerOptions())
 		dOpts = append(dOpts, grpc.WithTransportCredentials(creds))
 	} else if config.SPIFFE {
-		spiffeCtx, spifCancel := context.WithTimeout(context.Background(), config.RPCTimeout)
+		spiffeCtx, spifCancel := context.WithTimeout(context.Background(), config.RPCTimeout.Duration)
 		defer spifCancel()
 		source, err := workloadapi.NewX509Source(spiffeCtx)
 		if err != nil {
@@ -117,18 +118,18 @@ func NewGrpcCheck(name string, config config.GRPCCheck) (api.Check, error) {
 }
 
 // Interval indicates how often the check should be performed
-func (c *grpcCheck) Interval() time.Duration {
+func (c *grpcCheck) Interval() metav1.Duration {
 	return c.config.Interval
 }
 
 // InitialDelay indicates how long to delay the check start
-func (c *grpcCheck) InitialDelay() time.Duration {
+func (c *grpcCheck) InitialDelay() metav1.Duration {
 	return c.config.InitialDelay
 }
 
 // Execute performs the check
 func (c *grpcCheck) Execute(ctx context.Context) (bool, error) {
-	dialCtx, dialCancel := context.WithTimeout(context.Background(), c.config.ConnTimeout)
+	dialCtx, dialCancel := context.WithTimeout(context.Background(), c.config.ConnTimeout.Duration)
 	defer dialCancel()
 	conn, err := grpc.DialContext(dialCtx, c.config.Address, c.dialOpts...)
 	if err != nil {
@@ -136,7 +137,7 @@ func (c *grpcCheck) Execute(ctx context.Context) (bool, error) {
 	}
 	defer conn.Close()
 
-	rpcCtx, rpcCancel := context.WithTimeout(context.Background(), c.config.RPCTimeout)
+	rpcCtx, rpcCancel := context.WithTimeout(context.Background(), c.config.RPCTimeout.Duration)
 	defer rpcCancel()
 	rpcCtx = metadata.NewOutgoingContext(rpcCtx, c.config.RPCHeaders)
 	resp, err := healthpb.NewHealthClient(conn).Check(rpcCtx,

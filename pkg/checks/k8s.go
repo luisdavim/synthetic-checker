@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -33,11 +34,11 @@ func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error) {
 	if name == "" {
 		return nil, fmt.Errorf("CheckName must not be empty")
 	}
-	if config.Interval == 0 {
-		config.Interval = 30 * time.Second
+	if config.Interval.Duration == 0 {
+		config.Interval = metav1.Duration{Duration: 30 * time.Second}
 	}
-	if config.Timeout == 0 {
-		config.Timeout = time.Second
+	if config.Timeout.Duration == 0 {
+		config.Timeout = metav1.Duration{Duration: time.Second}
 	}
 
 	if k8sClient == nil {
@@ -59,12 +60,12 @@ func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error) {
 }
 
 // Interval indicates how often the check should be performed
-func (c *k8sCheck) Interval() time.Duration {
+func (c *k8sCheck) Interval() metav1.Duration {
 	return c.config.Interval
 }
 
 // InitialDelay indicates how long to delay the check start
-func (c *k8sCheck) InitialDelay() time.Duration {
+func (c *k8sCheck) InitialDelay() metav1.Duration {
 	return c.config.InitialDelay
 }
 

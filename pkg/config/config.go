@@ -1,9 +1,8 @@
 package config
 
 import (
-	"time"
-
 	"google.golang.org/grpc/metadata"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Config represents the checks configuration
@@ -19,11 +18,11 @@ type Config struct {
 // BaseCheck holds the common properties across checks
 type BaseCheck struct {
 	// Timeout is the timeout used for the check duration, defaults to "1s".
-	Timeout time.Duration `mapstructure:"timeout,omitempty"`
+	Timeout metav1.Duration `mapstructure:"timeout,omitempty"`
 	// Interval defines how often the check should be executed, defaults to 30 seconds.
-	Interval time.Duration `mapstructure:"interval,omitempty"`
+	Interval metav1.Duration `mapstructure:"interval,omitempty"`
 	// InitialDelay defines a time to wait for before starting the check
-	InitialDelay time.Duration `mapstructure:"initialDelay,omitempty"`
+	InitialDelay metav1.Duration `mapstructure:"initialDelay,omitempty"`
 }
 
 // HTTPCheck configures a check for the response from a given URL.
@@ -54,11 +53,11 @@ type GRPCCheck struct {
 	// UserAgent defines the user-agent header value of health check requests
 	UserAgent string `mapstructure:"userAgent,omitempty"`
 	// ConnTimeout is the timeout for establishing connection
-	ConnTimeout time.Duration `mapstructure:"connTimeout,omitempty"`
+	ConnTimeout metav1.Duration `mapstructure:"connTimeout,omitempty"`
 	// RPCHeaders sends metadata in the RPC request context
 	RPCHeaders metadata.MD `mapstructure:"RPCHeaders,omitempty"`
 	// RPCTimeout is the timeout for health check rpc
-	RPCTimeout time.Duration `mapstructure:"rpcTimeout,omitempty"`
+	RPCTimeout metav1.Duration `mapstructure:"rpcTimeout,omitempty"`
 	// TLS indicates whether TLS should be used
 	TLS bool `mapstructure:"tls,omitempty"`
 	// TLSNoVerify makes the check skip the cert validation
@@ -89,7 +88,7 @@ type TLSCheck struct {
 	HostNames []string `mapstructure:"hostNames,omitempty"`
 	// ExpiryThreshold is the minimum amount of time that the certificate should be valid for
 	// defaults to 168h (7 days)
-	ExpiryThreshold time.Duration `mapstructure:"expiryThreshold,omitempty"`
+	ExpiryThreshold metav1.Duration `mapstructure:"expiryThreshold,omitempty"`
 	// InsecureSkipVerify indicates whether the certificate should be checked when establishing the connection
 	InsecureSkipVerify bool `mapstructure:"insecureSkipVerify"`
 	// SkipChainValidation limita the certificate validation to the leaf certificate

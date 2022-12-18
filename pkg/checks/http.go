@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/luisdavim/synthetic-checker/pkg/api"
 	"github.com/luisdavim/synthetic-checker/pkg/config"
 )
@@ -61,30 +63,30 @@ func NewHTTPCheck(name string, config config.HTTPCheck) (api.Check, error) {
 	if config.Method == "" {
 		config.Method = http.MethodGet
 	}
-	if config.Timeout == 0 {
-		config.Timeout = time.Second
+	if config.Timeout.Duration == 0 {
+		config.Timeout = metav1.Duration{Duration: time.Second}
 	}
 
-	if config.Interval == 0 {
-		config.Interval = 30 * time.Second
+	if config.Interval.Duration == 0 {
+		config.Interval = metav1.Duration{Duration: 30 * time.Second}
 	}
 
 	check := &httpCheck{
 		config: &config,
 		client: &http.Client{
-			Timeout: config.Timeout,
+			Timeout: config.Timeout.Duration,
 		},
 	}
 	return check, nil
 }
 
 // Interval indicates how often the check should be performed
-func (c *httpCheck) Interval() time.Duration {
+func (c *httpCheck) Interval() metav1.Duration {
 	return c.config.Interval
 }
 
 // InitialDelay indicates how long to delay the check start
-func (c *httpCheck) InitialDelay() time.Duration {
+func (c *httpCheck) InitialDelay() metav1.Duration {
 	return c.config.InitialDelay
 }
 

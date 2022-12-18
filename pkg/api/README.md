@@ -24,9 +24,9 @@ type Check interface {
     // Checkers must implement an Execute function that runs the check and returns the status
     Execute(ctx context.Context) (bool, error)
     // Checkers must implement an Interval function that indicates how often the check should run
-    Interval() time.Duration
+    Interval() metav1.Duration
     // Checkers must implement an InitialDelay function that indicates how long to delay the start
-    InitialDelay() time.Duration
+    InitialDelay() metav1.Duration
 }
 ```
 
@@ -49,7 +49,7 @@ type Status struct {
     // Timestamp indicates when the check was last run
     Timestamp time.Time `json:"timestamp"`
     // Duration indicates how long the last check took to run
-    Duration time.Duration `json:"duration,omitempty"`
+    Duration metav1.Duration `json:"duration,omitempty"`
     // ContiguousFailures indicates the number of failures that occurred in a row
     ContiguousFailures int `json:"contiguousFailures"`
     // TimeOfFirstFailure indicates when the first failure occurred

@@ -30,7 +30,7 @@ func New(cfg *config.Config) *cobra.Command {
 		Long:         `Run the checks once and get an exit code.`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			chkr, err := checker.NewFromConfig(*cfg)
+			chkr, err := checker.NewFromConfig(*cfg, false)
 			if err != nil {
 				return err
 			}

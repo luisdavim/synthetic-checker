@@ -31,7 +31,7 @@ func New(cfg *config.Config) *cobra.Command {
 		Long:         `Run as a service.`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			chkr, err := checker.NewFromConfig(*cfg)
+			chkr, err := checker.NewFromConfig(*cfg, !haMode)
 			if err != nil {
 				return err
 			}
@@ -52,10 +52,9 @@ func New(cfg *config.Config) *cobra.Command {
 					<-ctx.Done() // hold the routine, Run goes into the background
 				}, chkr.Syncer(false, srvCfg.HTTP.Port))
 			} else {
-				stop := chkr.Start() // Start the checker
 				srv.WithShutdownFunc(func() error {
 					// ensure the checker routines are stopped
-					stop()
+					chkr.Stop()
 					return nil
 				})
 			}

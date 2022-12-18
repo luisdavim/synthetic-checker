@@ -6,6 +6,8 @@ import (
 	"net"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/luisdavim/synthetic-checker/pkg/api"
 	"github.com/luisdavim/synthetic-checker/pkg/config"
 )
@@ -28,11 +30,11 @@ func NewConnCheck(name string, config config.ConnCheck) (api.Check, error) {
 	if config.Protocol == "" {
 		config.Protocol = "tcp"
 	}
-	if config.Interval == 0 {
-		config.Interval = 30 * time.Second
+	if config.Interval.Duration == 0 {
+		config.Interval = metav1.Duration{Duration: 30 * time.Second}
 	}
-	if config.Timeout == 0 {
-		config.Timeout = time.Second
+	if config.Timeout.Duration == 0 {
+		config.Timeout = metav1.Duration{Duration: time.Second}
 	}
 
 	return &connCheck{
@@ -41,12 +43,12 @@ func NewConnCheck(name string, config config.ConnCheck) (api.Check, error) {
 }
 
 // Interval indicates how often the check should be performed
-func (c *connCheck) Interval() time.Duration {
+func (c *connCheck) Interval() metav1.Duration {
 	return c.config.Interval
 }
 
 // InitialDelay indicates how long to delay the check start
-func (c *connCheck) InitialDelay() time.Duration {
+func (c *connCheck) InitialDelay() metav1.Duration {
 	return c.config.InitialDelay
 }
 
@@ -54,7 +56,7 @@ func (c *connCheck) InitialDelay() time.Duration {
 func (c *connCheck) Execute(ctx context.Context) (bool, error) {
 	if c.dialer == nil {
 		c.dialer = &net.Dialer{
-			Timeout: c.config.Timeout,
+			Timeout: c.config.Timeout.Duration,
 		}
 	}
 

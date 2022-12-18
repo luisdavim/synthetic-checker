@@ -11,6 +11,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/luisdavim/synthetic-checker/pkg/api"
 	"github.com/luisdavim/synthetic-checker/pkg/checks"
@@ -46,7 +47,7 @@ type CheckRunner struct {
 }
 
 // NewFromConfig creates a check runner from the given configuration
-func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
+func NewFromConfig(cfg config.Config, start bool) (*CheckRunner, error) {
 	prometheus.MustRegister(checkStatus, checkCount, checkDuration)
 	runner := &CheckRunner{
 		checks: make(api.Checks),
@@ -55,40 +56,48 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 		log:    zerolog.New(os.Stderr).With().Timestamp().Str("name", "checkerLogger").Logger().Level(zerolog.InfoLevel),
 	}
 
+	if err := runner.AddFromConfig(cfg, start); err != nil {
+		return nil, err
+	}
+
+	return runner, nil
+}
+
+func (runner *CheckRunner) AddFromConfig(cfg config.Config, start bool) error {
 	// setup HTTP checks
 	for name, config := range cfg.HTTPChecks {
-		var err error
-		runner.checks[name+"-http"], err = checks.NewHTTPCheck(name, config)
+		check, err := checks.NewHTTPCheck(name, config)
 		if err != nil {
-			return nil, err
+			return err
 		}
+		runner.AddCheck(name+"-http", check, start)
 	}
 
 	// setup DNS checks
 	for name, config := range cfg.DNSChecks {
-		var err error
-		runner.checks[name+"-dns"], err = checks.NewDNSCheck(name, config)
+		check, err := checks.NewDNSCheck(name, config)
 		if err != nil {
-			return nil, err
+			return err
 		}
+		runner.AddCheck(name+"-dns", check, start)
 	}
 
 	// setup K8s checks
 	for name, config := range cfg.K8sChecks {
-		var err error
-		runner.checks[name+"-k8s"], err = checks.NewK8sCheck(name, config)
+		check, err := checks.NewK8sCheck(name, config)
 		if err != nil {
-			return nil, err
+			return err
 		}
+		runner.AddCheck(name+"-k8s", check, start)
 	}
 
 	// setup conn checks
 	for name, config := range cfg.ConnChecks {
-		var err error
-		runner.checks[name+"-conn"], err = checks.NewConnCheck(name, config)
+		check, err := checks.NewConnCheck(name, config)
 		if err != nil {
-			return nil, err
+			return err
 		}
+		runner.AddCheck(name+"-conn", check, start)
 	}
 
 	// setup TLS checks
@@ -96,24 +105,23 @@ func NewFromConfig(cfg config.Config) (*CheckRunner, error) {
 		var err error
 		runner.checks[name+"-tls"], err = checks.NewTLSCheck(name, config)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	// setup gRPC checks
 	for name, config := range cfg.GRPCChecks {
-		var err error
-		runner.checks[name+"-grpc"], err = checks.NewGrpcCheck(name, config)
+		check, err := checks.NewGrpcCheck(name, config)
 		if err != nil {
-			return nil, err
+			return err
 		}
+		runner.AddCheck(name+"-grpc", check, start)
 	}
-
-	return runner, nil
+	return nil
 }
 
 // AddCheck schedules a new check
-func (runner *CheckRunner) AddCheck(name string, check api.Check) {
+func (runner *CheckRunner) AddCheck(name string, check api.Check, start bool) {
 	runner.log.Info().Str("name", name).Msg("new check")
 	runner.Lock()
 	_, found := runner.checks[name]
@@ -124,7 +132,7 @@ func (runner *CheckRunner) AddCheck(name string, check api.Check) {
 	// 	found = false
 	// }
 	runner.checks[name] = check
-	if !found {
+	if !found && start {
 		runner.stop[name] = make(chan struct{})
 		runner.run(context.Background(), name)
 	}
@@ -194,6 +202,10 @@ func (runner *CheckRunner) Start() context.CancelFunc {
 // Run schedules all the checks, running them periodically in the background, according to their configuration
 func (runner *CheckRunner) Run(ctx context.Context) {
 	for name := range runner.checks {
+		if _, ok := runner.stop[name]; ok {
+			// already running
+			continue
+		}
 		runner.stop[name] = make(chan struct{})
 		runner.run(ctx, name)
 	}
@@ -203,9 +215,9 @@ func (runner *CheckRunner) Run(ctx context.Context) {
 func (runner *CheckRunner) run(ctx context.Context, name string) {
 	// ctx, _ = context.WithCancel(ctx)
 	go func() {
-		time.Sleep(runner.checks[name].InitialDelay())
+		time.Sleep(runner.checks[name].InitialDelay().Duration)
 		runner.check(ctx, name)
-		ticker := time.NewTicker(runner.checks[name].Interval())
+		ticker := time.NewTicker(runner.checks[name].Interval().Duration)
 		defer ticker.Stop()
 		for {
 			select {
@@ -266,7 +278,7 @@ func (runner *CheckRunner) Check(ctx context.Context) {
 		wg.Add(1)
 		go func(name string, check api.Check) {
 			defer wg.Done()
-			time.Sleep(check.InitialDelay())
+			time.Sleep(check.InitialDelay().Duration)
 			runner.check(ctx, name)
 		}(name, runner.checks[name])
 	}
@@ -288,7 +300,7 @@ func (runner *CheckRunner) check(ctx context.Context, name string) {
 	if err != nil {
 		status.Error = err.Error()
 	}
-	status.Duration = time.Since(status.Timestamp)
+	status.Duration = metav1.Duration{Duration: time.Since(status.Timestamp)}
 	if !status.OK {
 		if status.ContiguousFailures == 0 {
 			status.TimeOfFirstFailure = status.Timestamp

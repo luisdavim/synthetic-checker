@@ -7,6 +7,7 @@ import (
 	"time"
 
 	netv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -144,10 +145,11 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
-	var interval time.Duration
+	var interval metav1.Duration
 
 	if i, ok := ingress.Annotations[intervalAnnotation]; ok {
-		interval, _ = time.ParseDuration(i)
+		d, _ := time.ParseDuration(i)
+		interval.Duration = d
 	}
 
 	hosts := getHosts(ingress)
@@ -175,28 +177,30 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 	return nil
 }
 
-func (r *IngressReconciler) setDNSChecks(hosts, ports []string, interval time.Duration) error {
+func (r *IngressReconciler) setDNSChecks(hosts, ports []string, interval metav1.Duration) error {
 	for i, host := range hosts {
 		name := host + "-dns"
+		d := time.Duration(i) + 1*time.Second
 		check, err := checks.NewDNSCheck(name,
 			config.DNSCheck{
 				Host: host,
 				BaseCheck: config.BaseCheck{
-					InitialDelay: time.Duration(i) + 1*time.Second,
+					InitialDelay: metav1.Duration{Duration: d},
 					Interval:     interval,
 				},
 			})
 		if err != nil {
 			return err
 		}
-		r.Checker.AddCheck(name, check)
+		r.Checker.AddCheck(name, check, true)
 	}
 
 	return nil
 }
 
-func (r *IngressReconciler) setConnChecks(lbs, ports, hosts []string, tls, noTLS bool, interval time.Duration) error {
+func (r *IngressReconciler) setConnChecks(lbs, ports, hosts []string, tls, noTLS bool, interval metav1.Duration) error {
 	for i, lb := range lbs {
+		d := time.Duration(i) + 1*time.Second
 		for _, port := range ports {
 			lb = lb + port
 			name := lb + "-conn"
@@ -213,7 +217,7 @@ func (r *IngressReconciler) setConnChecks(lbs, ports, hosts []string, tls, noTLS
 						InsecureSkipVerify:  true,
 						SkipChainValidation: true,
 						BaseCheck: config.BaseCheck{
-							InitialDelay: time.Duration(i) + 1*time.Second,
+							InitialDelay: metav1.Duration{Duration: d},
 							Interval:     interval,
 						},
 					})
@@ -222,7 +226,7 @@ func (r *IngressReconciler) setConnChecks(lbs, ports, hosts []string, tls, noTLS
 					config.ConnCheck{
 						Address: lb,
 						BaseCheck: config.BaseCheck{
-							InitialDelay: time.Duration(i) + 1*time.Second,
+							InitialDelay: metav1.Duration{Duration: d},
 							Interval:     interval,
 						},
 					})
@@ -230,19 +234,20 @@ func (r *IngressReconciler) setConnChecks(lbs, ports, hosts []string, tls, noTLS
 			if err != nil {
 				return err
 			}
-			r.Checker.AddCheck(name, check)
+			r.Checker.AddCheck(name, check, true)
 		}
 	}
 
 	return nil
 }
 
-func (r *IngressReconciler) setHTTPChecks(hosts, ports, endpoints []string, interval time.Duration) error {
+func (r *IngressReconciler) setHTTPChecks(hosts, ports, endpoints []string, interval metav1.Duration) error {
 	if len(endpoints) == 0 {
 		return nil
 	}
 
 	for i, host := range hosts {
+		d := time.Duration(i) + 1*time.Second
 		for _, port := range ports {
 			for _, endpoint := range endpoints {
 				url := strings.ReplaceAll(host, "*", "check") + port + endpoint
@@ -256,14 +261,14 @@ func (r *IngressReconciler) setHTTPChecks(hosts, ports, endpoints []string, inte
 					config.HTTPCheck{
 						URL: url,
 						BaseCheck: config.BaseCheck{
-							InitialDelay: time.Duration(i) + 1*time.Second,
+							InitialDelay: metav1.Duration{Duration: d},
 							Interval:     interval,
 						},
 					})
 				if err != nil {
 					return err
 				}
-				r.Checker.AddCheck(name, check)
+				r.Checker.AddCheck(name, check, true)
 			}
 		}
 	}
