@@ -73,6 +73,8 @@ type LeaderElector struct {
 }
 
 func NewLeaderElector(id, namespace string) (*LeaderElector, error) {
+	logLevel := zerolog.InfoLevel
+	logger := zerolog.New(os.Stderr).With().Timestamp().Str("name", "leaderElector").Logger().Level(logLevel)
 	if id == "" {
 		id = os.Getenv("POD_NAME")
 	}
@@ -90,19 +92,20 @@ func NewLeaderElector(id, namespace string) (*LeaderElector, error) {
 			return nil, err
 		}
 	}
+	logger.Info().Msgf("setting up leader election, ID: %s, namespace: %s", id, namespace)
 	lock, err := newResourceLock(id, namespace)
 	if err != nil {
 		return nil, err
 	}
-	logLevel := zerolog.InfoLevel
 	return &LeaderElector{
 		ID:     id,
 		lock:   lock,
-		logger: zerolog.New(os.Stderr).With().Timestamp().Str("name", "leaderElector").Logger().Level(logLevel),
+		logger: logger,
 	}, nil
 }
 
 func (l *LeaderElector) RunLeaderElection(ctx context.Context, run func(context.Context), sync func(leader string)) {
+	l.logger.Info().Msg("starting leader election runner")
 	done := make(chan struct{})
 	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
 		Lock:            l.lock,

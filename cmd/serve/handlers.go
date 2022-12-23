@@ -15,7 +15,7 @@ import (
 
 const cfgTpl = `{"%sChecks": {%q: %s}}`
 
-func statusHandler(chkr *checker.CheckRunner, srv *server.Server, failStatus, degradedStatus int) http.HandlerFunc {
+func statusHandler(chkr *checker.Runner, srv *server.Server, failStatus, degradedStatus int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		statusCode := http.StatusOK
 		checkStatus := chkr.GetStatus()
@@ -31,7 +31,7 @@ func statusHandler(chkr *checker.CheckRunner, srv *server.Server, failStatus, de
 	}
 }
 
-func addCheckHandler(chkr *checker.CheckRunner) http.HandlerFunc {
+func addCheckHandler(chkr *checker.Runner) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		if r.Method == http.MethodDelete {
@@ -59,14 +59,14 @@ func addCheckHandler(chkr *checker.CheckRunner) http.HandlerFunc {
 	}
 }
 
-func deleteCheckHandler(chkr *checker.CheckRunner) http.HandlerFunc {
+func deleteCheckHandler(chkr *checker.Runner) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		chkr.DelCheck(vars["name"])
 	}
 }
 
-func setRoutes(chkr *checker.CheckRunner, srv *server.Server, failStatus, degradedStatus int) {
+func setRoutes(chkr *checker.Runner, srv *server.Server, failStatus, degradedStatus int) {
 	routes := server.Routes{
 		"/": {
 			Func:    statusHandler(chkr, srv, failStatus, degradedStatus),

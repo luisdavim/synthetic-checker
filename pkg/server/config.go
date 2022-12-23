@@ -20,7 +20,6 @@ type Auth struct {
 // HTTP holds the configuration for the HTTP server
 type HTTP struct {
 	Auth         Auth    `mapstructure:"auth,omitempty"`
-	OperatorAuth string  `mapstructure:"operatorAuth,omitempty"`
 	Port         int     `mapstructure:"port,omitempty"`
 	SecurePort   int     `mapstructure:"securePort,omitempty"`
 	CertFile     string  `mapstructure:"certFile,omitempty"`

@@ -44,6 +44,12 @@ checks:
   #     interval: 30s
   #     initialDelay: 2s
 
+informer:
+  # when set to true, will prevent the checks from being executed in the local instance
+  informOnly: false
+  upstreams: []
+  # - url: https://synthetic-checker.example.com
+
 statusCodes:
   failed: 200
   degraded: 200

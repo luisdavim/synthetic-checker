@@ -10,19 +10,26 @@ ingresswatcher is a kubernetes controller that watches Ingress resources and con
 
 ## Index
 
-- [func Start(chkr *checker.CheckRunner, metricsAddr, probeAddr string, enableLeaderElection bool) error](<#func-start>)
+- [func Start(chkr *checker.Runner, metricsAddr, probeAddr string, enableLeaderElection bool) error](<#func-start>)
+- [func StartBackground(chkr *checker.Runner, metricsAddr, probeAddr string, enableLeaderElection bool)](<#func-startbackground>)
 - [type IngressReconciler](<#type-ingressreconciler>)
   - [func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error)](<#func-ingressreconciler-reconcile>)
   - [func (r *IngressReconciler) SetupWithManager(mgr ctrl.Manager) error](<#func-ingressreconciler-setupwithmanager>)
 
 
-## func [Start](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/ingresswatcher.go#L34>)
+## func [Start](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/ingresswatcher.go#L43>)
 
 ```go
-func Start(chkr *checker.CheckRunner, metricsAddr, probeAddr string, enableLeaderElection bool) error
+func Start(chkr *checker.Runner, metricsAddr, probeAddr string, enableLeaderElection bool) error
 ```
 
-## type [IngressReconciler](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/reconciler.go#L42-L46>)
+## func [StartBackground](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/ingresswatcher.go#L34>)
+
+```go
+func StartBackground(chkr *checker.Runner, metricsAddr, probeAddr string, enableLeaderElection bool)
+```
+
+## type [IngressReconciler](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/reconciler.go#L45-L49>)
 
 IngressReconciler reconciles a Ingress object
 
@@ -30,17 +37,17 @@ IngressReconciler reconciles a Ingress object
 type IngressReconciler struct {
     client.Client
     Scheme  *runtime.Scheme
-    Checker *checker.CheckRunner
+    Checker *checker.Runner
 }
 ```
 
-### func \(\*IngressReconciler\) [Reconcile](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/reconciler.go#L92>)
+### func \(\*IngressReconciler\) [Reconcile](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/reconciler.go#L95>)
 
 ```go
 func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error)
 ```
 
-### func \(\*IngressReconciler\) [SetupWithManager](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/reconciler.go#L48>)
+### func \(\*IngressReconciler\) [SetupWithManager](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/reconciler.go#L51>)
 
 ```go
 func (r *IngressReconciler) SetupWithManager(mgr ctrl.Manager) error

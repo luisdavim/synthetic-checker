@@ -8,113 +8,122 @@ import "github.com/luisdavim/synthetic-checker/pkg/checker"
 
 ## Index
 
-- [type CheckRunner](<#type-checkrunner>)
-  - [func NewFromConfig(cfg config.Config) (*CheckRunner, error)](<#func-newfromconfig>)
-  - [func (runner *CheckRunner) AddCheck(name string, check api.Check)](<#func-checkrunner-addcheck>)
-  - [func (runner *CheckRunner) Check(ctx context.Context)](<#func-checkrunner-check>)
-  - [func (runner *CheckRunner) DelCheck(name string)](<#func-checkrunner-delcheck>)
-  - [func (runner *CheckRunner) GetStatus() api.Statuses](<#func-checkrunner-getstatus>)
-  - [func (runner *CheckRunner) GetStatusFor(name string) (api.Status, bool)](<#func-checkrunner-getstatusfor>)
-  - [func (runner *CheckRunner) Run(ctx context.Context)](<#func-checkrunner-run>)
-  - [func (runner *CheckRunner) Start() context.CancelFunc](<#func-checkrunner-start>)
-  - [func (runner *CheckRunner) Stop()](<#func-checkrunner-stop>)
-  - [func (runner *CheckRunner) Summary() (allFailed, anyFailed bool)](<#func-checkrunner-summary>)
-  - [func (runner *CheckRunner) Syncer(useSSL bool, port int) func(string)](<#func-checkrunner-syncer>)
+- [type Runner](<#type-runner>)
+  - [func NewFromConfig(cfg config.Config, start bool) (*Runner, error)](<#func-newfromconfig>)
+  - [func (r *Runner) AddCheck(name string, check api.Check, start bool)](<#func-runner-addcheck>)
+  - [func (r *Runner) AddFromConfig(cfg config.Config, start bool) error](<#func-runner-addfromconfig>)
+  - [func (r *Runner) Check(ctx context.Context)](<#func-runner-check>)
+  - [func (r *Runner) DelCheck(name string)](<#func-runner-delcheck>)
+  - [func (r *Runner) GetStatus() api.Statuses](<#func-runner-getstatus>)
+  - [func (r *Runner) GetStatusFor(name string) (api.Status, bool)](<#func-runner-getstatusfor>)
+  - [func (r *Runner) Run(ctx context.Context)](<#func-runner-run>)
+  - [func (r *Runner) Start() context.CancelFunc](<#func-runner-start>)
+  - [func (r *Runner) Stop()](<#func-runner-stop>)
+  - [func (r *Runner) Summary() (allFailed, anyFailed bool)](<#func-runner-summary>)
+  - [func (r *Runner) Syncer(useSSL bool, port int) func(string)](<#func-runner-syncer>)
 
 
-## type [CheckRunner](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L35-L41>)
+## type [Runner](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L42-L51>)
 
-CheckRunner reprents the main checker responsible for scheduling and executing all the checks
+Runner reprents the main checks runner \(checker\) responsible for scheduling and executing \(running\) all the checks
 
 ```go
-type CheckRunner struct {
+type Runner struct {
     sync.RWMutex
     // contains filtered or unexported fields
 }
 ```
 
-### func [NewFromConfig](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L44>)
+### func [NewFromConfig](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L54>)
 
 ```go
-func NewFromConfig(cfg config.Config) (*CheckRunner, error)
+func NewFromConfig(cfg config.Config, start bool) (*Runner, error)
 ```
 
 NewFromConfig creates a check runner from the given configuration
 
-### func \(\*CheckRunner\) [AddCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L111>)
+### func \(\*Runner\) [AddCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L142>)
 
 ```go
-func (runner *CheckRunner) AddCheck(name string, check api.Check)
+func (r *Runner) AddCheck(name string, check api.Check, start bool)
 ```
 
 AddCheck schedules a new check
 
-### func \(\*CheckRunner\) [Check](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L255>)
+### func \(\*Runner\) [AddFromConfig](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L84>)
 
 ```go
-func (runner *CheckRunner) Check(ctx context.Context)
+func (r *Runner) AddFromConfig(cfg config.Config, start bool) error
+```
+
+AddFromConfig loads the checks from the given configuration
+
+### func \(\*Runner\) [Check](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L330>)
+
+```go
+func (r *Runner) Check(ctx context.Context)
 ```
 
 Check runs all the checks in parallel and waits for them to complete
 
-### func \(\*CheckRunner\) [DelCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L130>)
+### func \(\*Runner\) [DelCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L162>)
 
 ```go
-func (runner *CheckRunner) DelCheck(name string)
+func (r *Runner) DelCheck(name string)
 ```
 
-DelCheck stops the given check and removes them from the running config
+DelCheck stops the given check and removes it from the running config
 
-### func \(\*CheckRunner\) [GetStatus](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L144>)
+### func \(\*Runner\) [GetStatus](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L180>)
 
 ```go
-func (runner *CheckRunner) GetStatus() api.Statuses
+func (r *Runner) GetStatus() api.Statuses
 ```
 
 GetStatus returns the overall status of all the checks
 
-### func \(\*CheckRunner\) [GetStatusFor](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L149>)
+### func \(\*Runner\) [GetStatusFor](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L185>)
 
 ```go
-func (runner *CheckRunner) GetStatusFor(name string) (api.Status, bool)
+func (r *Runner) GetStatusFor(name string) (api.Status, bool)
 ```
 
 GetStatusFor returns the status for the given check
 
-### func \(\*CheckRunner\) [Run](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L187>)
+### func \(\*Runner\) [Run](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L227>)
 
 ```go
-func (runner *CheckRunner) Run(ctx context.Context)
+func (r *Runner) Run(ctx context.Context)
 ```
 
-Run schedules all the checks, running them periodically in the background, according to their configuration
+Run schedules all the checks, running them periodically in the background, according to their configuration in the informer is configured, it will also set up a refresher to ensure the configuration is eventually consistent, even if we miss update events
 
-### func \(\*CheckRunner\) [Start](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L180>)
+### func \(\*Runner\) [Start](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L219>)
 
 ```go
-func (runner *CheckRunner) Start() context.CancelFunc
+func (r *Runner) Start() context.CancelFunc
 ```
 
 Start schedules all the checks, running them periodically in the background, according to their configuration
 
-### func \(\*CheckRunner\) [Stop](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L218>)
+### func \(\*Runner\) [Stop](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L293>)
 
 ```go
-func (runner *CheckRunner) Stop()
+func (r *Runner) Stop()
 ```
 
 Stop stops all checks
 
-### func \(\*CheckRunner\) [Summary](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L268>)
+### func \(\*Runner\) [Summary](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L343>)
 
 ```go
-func (runner *CheckRunner) Summary() (allFailed, anyFailed bool)
+func (r *Runner) Summary() (allFailed, anyFailed bool)
 ```
 
-### func \(\*CheckRunner\) [Syncer](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L228>)
+### func \(\*Runner\) [Syncer](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L303>)
 
 ```go
-func (runner *CheckRunner) Syncer(useSSL bool, port int) func(string)
+func (r *Runner) Syncer(useSSL bool, port int) func(string)
 ```
 
 Syncer returns a sync function that fetches the state from the leader

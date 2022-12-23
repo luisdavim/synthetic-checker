@@ -1,0 +1,5 @@
+informer:
+  informOnly: true
+  upstreams:
+    - url: https://synthetic-checker.us.example.com
+    - url: https://synthetic-checker.eu.example.com

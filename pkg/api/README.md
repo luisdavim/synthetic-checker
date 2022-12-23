@@ -15,7 +15,7 @@ import "github.com/luisdavim/synthetic-checker/pkg/api"
   - [func (status Statuses) Evaluate() (allFailed, anyFailed bool)](<#func-statuses-evaluate>)
 
 
-## type [Check](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/api/types.go#L9-L16>)
+## type [Check](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/api/types.go#L11-L20>)
 
 Check defines the api for implementing a checker
 
@@ -27,16 +27,18 @@ type Check interface {
     Interval() metav1.Duration
     // Checkers must implement an InitialDelay function that indicates how long to delay the start
     InitialDelay() metav1.Duration
+    // Checkers must implement a Config method that returns the check type, name and configuration
+    Config() (string, string, string, error)
 }
 ```
 
-## type [Checks](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/api/types.go#L18>)
+## type [Checks](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/api/types.go#L22>)
 
 ```go
 type Checks map[string]Check
 ```
 
-## type [Status](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/api/types.go#L21-L34>)
+## type [Status](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/api/types.go#L25-L38>)
 
 Status represents the state of what is being checked
 
@@ -57,13 +59,13 @@ type Status struct {
 }
 ```
 
-## type [Statuses](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/api/types.go#L36>)
+## type [Statuses](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/api/types.go#L40>)
 
 ```go
 type Statuses map[string]Status
 ```
 
-### func \(Statuses\) [Evaluate](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/api/types.go#L39>)
+### func \(Statuses\) [Evaluate](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/api/types.go#L43>)
 
 ```go
 func (status Statuses) Evaluate() (allFailed, anyFailed bool)

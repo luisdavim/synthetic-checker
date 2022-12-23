@@ -20,9 +20,9 @@ You can find the development docs in the [docs](./docs) folder.
 
 ## Usage
 
-This tool can be used either as a cli to run the checks once and get the results printed out.
+This tool can be used either as a cli to run the checks once (with optional retries) and get the results printed out as JSON.
 Or as a service that periodically runs the checks and exposes the results through an API endpoint.
-When running in service mode, the tool also exposes metrics in the Prometheus format under the `/metrics` endpoint.
+When running in service mode, the tool also exposes SLI metrics in the Prometheus format under the `/metrics` endpoint.
 When running in the cli mode, the checks are stil executed in parallel and the configured `initialDelay` is stil used.
 The cli mode can be used to run as an `init` container or as an `helm` pre or post hook as a pre-flight check or a post run validation. Or in a CI pipeline.
 
@@ -138,9 +138,23 @@ k8sChecks:
     initialDelay: 2s
 ```
 
+### Informer
+
+When running this tool as a service, you can configure it as an informer for syncing check configurations to upstream `synthetic-checker` instances.
+This is particularly useful when running in Kubernetes and watching `Ingress` resources. It allows to dynamically generate checks for all `Ingress` resources (using the `--watch-ingresses` flag) on the local cluster and run the checks from outside the cluster, in one or more upstream instances.
+
+Example configuration:
+
+```yaml
+informer:
+  informOnly: true # when set to true, will prevent the checks from being executed in the local instance
+  upstreams:
+    - url: https://synthetic-checker.example.com
+```
+
 ## Running as a service
 
-You can run the service locally with docker or using the built binary directly.
+You can run the service locally with docker or using the built binary directly. Or, you can run it in a Kubernetes cluster using the provided Helm chart.
 
 ### Using go run
 
@@ -182,6 +196,32 @@ $ curl -s http://localhost:8080/metrics | grep 'check_status_up'
 # TYPE check_status_up gauge
 check_status_up{name="stat200"} 1
 check_status_up{name="stat503"} 0
+```
+
+The following is an example of the metrics that are available for each check:
+
+```console
+# where the check name is stat200-http
+$ curl -s http://localhost:8080/metrics | grep 'stat200-http'
+# check_duration_ms is an histogram of the time it took run the check
+check_duration_ms_bucket{name="stat200-http",le="5"} 0
+check_duration_ms_bucket{name="stat200-http",le="10"} 0
+check_duration_ms_bucket{name="stat200-http",le="25"} 0
+check_duration_ms_bucket{name="stat200-http",le="50"} 0
+check_duration_ms_bucket{name="stat200-http",le="100"} 0
+check_duration_ms_bucket{name="stat200-http",le="250"} 0
+check_duration_ms_bucket{name="stat200-http",le="500"} 4
+check_duration_ms_bucket{name="stat200-http",le="1000"} 4
+check_duration_ms_bucket{name="stat200-http",le="2500"} 4
+check_duration_ms_bucket{name="stat200-http",le="5000"} 4
+check_duration_ms_bucket{name="stat200-http",le="10000"} 4
+check_duration_ms_bucket{name="stat200-http",le="+Inf"} 4
+check_duration_ms_sum{name="stat200-http"} 1732
+check_duration_ms_count{name="stat200-http"} 4
+# check_status_total is a counter of the check result statusses, "success" or "error"
+check_status_total{name="stat200-http",status="success"} 4
+# check_status_up is a gauge indicating the check's last observed status, 1 success or 0 error
+check_status_up{name="stat200-http"} 1
 ```
 
 ### Using Docker
@@ -236,16 +276,16 @@ metadata:
 spec:
   ingressClassName: nginx-example
   rules:
-  - host: "foo.bar.com"
-    http:
-      paths:
-      - path: /testpath
-        pathType: Prefix
-        backend:
-          service:
-            name: test
-            port:
-              number: 80
+    - host: "foo.bar.com"
+      http:
+        paths:
+          - path: /testpath
+            pathType: Prefix
+            backend:
+              service:
+                name: test
+                port:
+                  number: 80
 ```
 
 By default, the tool will setup DNS and connection checks for each ingress. It will check that all the host names resolve and will check if port 443 is reacheable on the ingress's LBs and that the TLS certFile is not about to expire.
@@ -337,7 +377,7 @@ We create the port-forward to Grafana with the following command:
 kubectl port-forward --namespace monitoring svc/kube-stack-prometheus-grafana 8080:80
 ```
 
-Open your browser and go to http://localhost:8080 and fill in previous credentials
+Open your browser, go to http://localhost:8080 and fill in previous credentials
 
 A dashboard is included in the provided helm chart, search for "synthetic checks" in the Grafana UI.
 

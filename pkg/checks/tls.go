@@ -3,6 +3,7 @@ package checks
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -16,6 +17,7 @@ import (
 var _ api.Check = &tlsCheck{}
 
 type tlsCheck struct {
+	name    string
 	config  *config.TLSCheck
 	tlsOpts *tls.Config
 }
@@ -48,11 +50,20 @@ func NewTLSCheck(name string, config config.TLSCheck) (api.Check, error) {
 	}
 
 	return &tlsCheck{
+		name:   name,
 		config: &config,
 		tlsOpts: &tls.Config{
 			InsecureSkipVerify: config.InsecureSkipVerify,
 		},
 	}, nil
+}
+
+func (c *tlsCheck) Config() (string, string, string, error) {
+	b, err := json.Marshal(c.config)
+	if err != nil {
+		return "", "", "", err
+	}
+	return "tls", c.name, string(b), nil
 }
 
 // Interval indicates how often the check should be performed

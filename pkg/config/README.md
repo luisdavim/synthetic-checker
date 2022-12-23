@@ -14,11 +14,13 @@ import "github.com/luisdavim/synthetic-checker/pkg/config"
 - [type DNSCheck](<#type-dnscheck>)
 - [type GRPCCheck](<#type-grpccheck>)
 - [type HTTPCheck](<#type-httpcheck>)
+- [type InformerCfg](<#type-informercfg>)
 - [type K8sCheck](<#type-k8scheck>)
 - [type TLSCheck](<#type-tlscheck>)
+- [type Upstream](<#type-upstream>)
 
 
-## type [BaseCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L20-L27>)
+## type [BaseCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L38-L45>)
 
 BaseCheck holds the common properties across checks
 
@@ -33,12 +35,13 @@ type BaseCheck struct {
 }
 ```
 
-## type [Config](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L10-L17>)
+## type [Config](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L9-L17>)
 
 Config represents the checks configuration
 
 ```go
 type Config struct {
+    Informer   InformerCfg          `mapstructure:"informer,omitempty"`
     HTTPChecks map[string]HTTPCheck `mapstructure:"httpChecks"`
     DNSChecks  map[string]DNSCheck  `mapstructure:"dnsChecks"`
     K8sChecks  map[string]K8sCheck  `mapstructure:"k8sChecks"`
@@ -48,7 +51,7 @@ type Config struct {
 }
 ```
 
-## type [ConnCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L110-L122>)
+## type [ConnCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L128-L140>)
 
 ConnCheck configures a conntivity check
 
@@ -68,7 +71,7 @@ type ConnCheck struct {
 }
 ```
 
-## type [DNSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L101-L107>)
+## type [DNSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L119-L125>)
 
 DNSCheck configures a probe to check if a DNS record resolves
 
@@ -82,7 +85,7 @@ type DNSCheck struct {
 }
 ```
 
-## type [GRPCCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L49-L81>)
+## type [GRPCCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L67-L99>)
 
 GRPCCheck configures a gRPC health check probe
 
@@ -122,7 +125,7 @@ type GRPCCheck struct {
 }
 ```
 
-## type [HTTPCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L31-L46>)
+## type [HTTPCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L49-L64>)
 
 HTTPCheck configures a check for the response from a given URL. The only required field is \`URL\`, which must be a valid URL.
 
@@ -145,7 +148,21 @@ type HTTPCheck struct {
 }
 ```
 
-## type [K8sCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L126-L138>)
+## type [InformerCfg](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L19-L27>)
+
+```go
+type InformerCfg struct {
+    // InformOnly, when set to true, will prevent the checks from being executed in the local instance
+    InformOnly bool `json:"informOnly,omitempty"`
+    // RefreshInterval indicates how often the checks will be refreshed upstream.
+    // checks are pushed upstream when they are created or updated, this help keeping the system level-triggered
+    // it defaults to 24h and should not be done too frequently.
+    RefreshInterval metav1.Duration `json:"syncInterval,omitempty"`
+    Upstreams       []Upstream      `mapstructure:"upstreams,omitempty"`
+}
+```
+
+## type [K8sCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L144-L156>)
 
 K8sCheck configures a check that probes the status of a Kubernetes resource. It supports any resource type that uses standard k8s status conditions.
 
@@ -165,7 +182,7 @@ type K8sCheck struct {
 }
 ```
 
-## type [TLSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L84-L98>)
+## type [TLSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L102-L116>)
 
 TLSCheck configures a TLS connection check, including certificate validation
 
@@ -184,6 +201,18 @@ type TLSCheck struct {
     // SkipChainValidation limita the certificate validation to the leaf certificate
     SkipChainValidation bool `mapstructure:"skipChainValidation,omitempty"`
     BaseCheck
+}
+```
+
+## type [Upstream](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L31-L35>)
+
+Upstream represents an upstream synthetic\-checker where to push checks to. This is useful when combined with the insgress watcher to generate remote checks for the local cluster
+
+```go
+type Upstream struct {
+    URL     string            `mapstructure:"url"`
+    Headers map[string]string `mapstructure:"headers,omitempty"`
+    Timeout metav1.Duration   `mapstructure:"timeout,omitempty"`
 }
 ```
 

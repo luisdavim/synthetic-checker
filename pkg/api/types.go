@@ -15,6 +15,8 @@ type Check interface {
 	Interval() metav1.Duration
 	// Checkers must implement an InitialDelay function that indicates how long to delay the start
 	InitialDelay() metav1.Duration
+	// Checkers must implement a Config method that returns the check type, name and configuration
+	Config() (string, string, string, error)
 }
 
 type Checks map[string]Check

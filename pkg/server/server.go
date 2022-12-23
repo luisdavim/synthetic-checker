@@ -207,7 +207,7 @@ func (s *Server) Start(signals chan os.Signal) (srvs []*http.Server) {
 		if s.config.CertFile == "" || s.config.KeyFile == "" {
 			return
 		}
-		srv := &http.Server{Addr: fmt.Sprintf(":%d", s.config.Port), Handler: rtr}
+		srv := &http.Server{Addr: fmt.Sprintf(":%d", s.config.SecurePort), Handler: rtr}
 		if err := srv.ListenAndServeTLS(s.config.CertFile, s.config.KeyFile); err != nil {
 			s.logger.Err(err).Msg("Failed to start HTTPS server")
 			signals <- syscall.SIGABRT

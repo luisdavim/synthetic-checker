@@ -31,7 +31,16 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func Start(chkr *checker.CheckRunner, metricsAddr, probeAddr string, enableLeaderElection bool) error {
+func StartBackground(chkr *checker.Runner, metricsAddr, probeAddr string, enableLeaderElection bool) {
+	go func() {
+		err := Start(chkr, metricsAddr, probeAddr, enableLeaderElection)
+		if err != nil {
+			panic(err)
+		}
+	}()
+}
+
+func Start(chkr *checker.Runner, metricsAddr, probeAddr string, enableLeaderElection bool) error {
 	opts := zap.Options{
 		Development: false,
 	}

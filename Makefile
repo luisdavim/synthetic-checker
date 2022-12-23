@@ -199,12 +199,15 @@ k8s_schemas: ## Get json schemas from CRDs to validate helm templates
 	@[ -e openapi2jsonschema.py.original ] && rm openapi2jsonschema.py.original
 
 helm-test: k8s_schemas ## Test the helm chart
+	echo -e "$(YELLOW)>>>$(RESET) Testing $(GREEN)Chart$(RESET) with $(CYAN)Default values$(RESET)"; \
 	helm template $(CHARTS_DIR)  | kubeconform  $(KUBECONFORM_FLGS)
 	@set -eo pipefail; \
 		for values in $(CHARTS_DIR)/ci/*.yaml; do \
 		  echo -e "\n$(YELLOW)>>>$(RESET) Testing $(GREEN)Chart$(RESET) with $(CYAN)$$(basename $$values)$(RESET)"; \
 		  helm template $(CHARTS_DIR) --namespace dev --values $$values | kubeconform $(KUBECONFORM_FLGS); \
 		done
+	echo -e "\n$(YELLOW)>>>$(RESET) Testing $(GREEN)Chart$(RESET) with $(CYAN)All ci values files$(RESET)"; \
+	helm template $(CHARTS_DIR) --namespace dev $(shell printf -- "-f %s " ${CHARTS_DIR}/ci/*.yaml) | kubeconform $(KUBECONFORM_FLGS)
 
 ## Docker:
 docker-build: ## Use the dockerfile to build the container

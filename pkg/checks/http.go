@@ -2,6 +2,7 @@ package checks
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,6 +20,7 @@ var _ api.Check = &httpCheck{}
 
 // httpCheck represents an http checker
 type httpCheck struct {
+	name   string
 	config *config.HTTPCheck
 	client *http.Client
 }
@@ -72,12 +74,21 @@ func NewHTTPCheck(name string, config config.HTTPCheck) (api.Check, error) {
 	}
 
 	check := &httpCheck{
+		name:   name,
 		config: &config,
 		client: &http.Client{
 			Timeout: config.Timeout.Duration,
 		},
 	}
 	return check, nil
+}
+
+func (c *httpCheck) Config() (string, string, string, error) {
+	b, err := json.Marshal(c.config)
+	if err != nil {
+		return "", "", "", err
+	}
+	return "http", c.name, string(b), nil
 }
 
 // Interval indicates how often the check should be performed

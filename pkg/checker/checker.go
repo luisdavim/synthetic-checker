@@ -16,6 +16,7 @@ import (
 	"github.com/luisdavim/synthetic-checker/pkg/api"
 	"github.com/luisdavim/synthetic-checker/pkg/checks"
 	"github.com/luisdavim/synthetic-checker/pkg/config"
+	"github.com/luisdavim/synthetic-checker/pkg/informer"
 )
 
 var (
@@ -36,41 +37,58 @@ var (
 	}, []string{"name"})
 )
 
-// CheckRunner reprents the main checker
-// responsible for scheduling and executing all the checks
-type CheckRunner struct {
-	checks api.Checks
-	status api.Statuses
-	stop   map[string](chan struct{})
-	log    zerolog.Logger
+// Runner reprents the main checks runner (checker)
+// responsible for scheduling and executing (running) all the checks
+type Runner struct {
+	checks          api.Checks
+	status          api.Statuses
+	stop            map[string](chan struct{})
+	log             zerolog.Logger
+	informer        *informer.Informer
+	upstreamRefresh time.Duration
+	informOnly      bool
 	sync.RWMutex
 }
 
 // NewFromConfig creates a check runner from the given configuration
-func NewFromConfig(cfg config.Config, start bool) (*CheckRunner, error) {
+func NewFromConfig(cfg config.Config, start bool) (*Runner, error) {
 	prometheus.MustRegister(checkStatus, checkCount, checkDuration)
-	runner := &CheckRunner{
+	r := &Runner{
 		checks: make(api.Checks),
 		status: make(api.Statuses),
 		stop:   make(map[string](chan struct{})),
 		log:    zerolog.New(os.Stderr).With().Timestamp().Str("name", "checkerLogger").Logger().Level(zerolog.InfoLevel),
 	}
 
-	if err := runner.AddFromConfig(cfg, start); err != nil {
+	if err := r.AddFromConfig(cfg, start); err != nil {
 		return nil, err
 	}
 
-	return runner, nil
+	if len(cfg.Informer.Upstreams) > 0 {
+		var err error
+		r.informer, err = informer.New(cfg.Informer.Upstreams)
+		if err != nil {
+			return nil, err
+		}
+		r.informOnly = cfg.Informer.InformOnly
+		r.upstreamRefresh = cfg.Informer.RefreshInterval.Duration
+		if r.upstreamRefresh == 0 {
+			r.upstreamRefresh = 24 * time.Hour
+		}
+	}
+
+	return r, nil
 }
 
-func (runner *CheckRunner) AddFromConfig(cfg config.Config, start bool) error {
+// AddFromConfig loads the checks from the given configuration
+func (r *Runner) AddFromConfig(cfg config.Config, start bool) error {
 	// setup HTTP checks
 	for name, config := range cfg.HTTPChecks {
 		check, err := checks.NewHTTPCheck(name, config)
 		if err != nil {
 			return err
 		}
-		runner.AddCheck(name+"-http", check, start)
+		r.AddCheck(name+"-http", check, start)
 	}
 
 	// setup DNS checks
@@ -79,7 +97,7 @@ func (runner *CheckRunner) AddFromConfig(cfg config.Config, start bool) error {
 		if err != nil {
 			return err
 		}
-		runner.AddCheck(name+"-dns", check, start)
+		r.AddCheck(name+"-dns", check, start)
 	}
 
 	// setup K8s checks
@@ -88,7 +106,7 @@ func (runner *CheckRunner) AddFromConfig(cfg config.Config, start bool) error {
 		if err != nil {
 			return err
 		}
-		runner.AddCheck(name+"-k8s", check, start)
+		r.AddCheck(name+"-k8s", check, start)
 	}
 
 	// setup conn checks
@@ -97,13 +115,13 @@ func (runner *CheckRunner) AddFromConfig(cfg config.Config, start bool) error {
 		if err != nil {
 			return err
 		}
-		runner.AddCheck(name+"-conn", check, start)
+		r.AddCheck(name+"-conn", check, start)
 	}
 
 	// setup TLS checks
 	for name, config := range cfg.TLSChecks {
 		var err error
-		runner.checks[name+"-tls"], err = checks.NewTLSCheck(name, config)
+		r.checks[name+"-tls"], err = checks.NewTLSCheck(name, config)
 		if err != nil {
 			return err
 		}
@@ -115,70 +133,75 @@ func (runner *CheckRunner) AddFromConfig(cfg config.Config, start bool) error {
 		if err != nil {
 			return err
 		}
-		runner.AddCheck(name+"-grpc", check, start)
+		r.AddCheck(name+"-grpc", check, start)
 	}
 	return nil
 }
 
 // AddCheck schedules a new check
-func (runner *CheckRunner) AddCheck(name string, check api.Check, start bool) {
-	runner.log.Info().Str("name", name).Msg("new check")
-	runner.Lock()
-	_, found := runner.checks[name]
-	// TODO: do we need to stop and Start the check and how to avoid a deadlock?
-	// if stopCh, ok := runner.stop[name]; found && ok && stopCh != nil {
-	// 	runner.log.Info().Str("name", name).Msg("stopping old check")
-	// 	close(stopCh)
-	// 	found = false
-	// }
-	runner.checks[name] = check
-	if !found && start {
-		runner.stop[name] = make(chan struct{})
-		runner.run(context.Background(), name)
+func (r *Runner) AddCheck(name string, check api.Check, start bool) {
+	if r.informOnly {
+		start = false
 	}
-	runner.Unlock()
+	r.log.Info().Str("name", name).Msg("new check")
+	r.Lock()
+	_, found := r.checks[name]
+	r.checks[name] = check
+	if !found && start {
+		r.stop[name] = make(chan struct{})
+		r.schedule(context.Background(), name)
+	}
+	r.Unlock()
+	if r.informer != nil {
+		err := r.informer.CreateOrUpdate(check)
+		r.log.Err(err).Str("name", name).Msg("syncing check upstream")
+	}
 }
 
-// DelCheck stops the given check and removes them from the running config
-func (runner *CheckRunner) DelCheck(name string) {
-	runner.log.Info().Str("name", name).Msg("deleting check")
-	runner.Lock()
-	if stopCh, ok := runner.stop[name]; ok && stopCh != nil {
-		runner.log.Info().Str("name", name).Msg("stopping check")
+// DelCheck stops the given check and removes it from the running config
+func (r *Runner) DelCheck(name string) {
+	r.log.Info().Str("name", name).Msg("deleting check")
+	r.Lock()
+	if stopCh, ok := r.stop[name]; ok && stopCh != nil {
+		r.log.Info().Str("name", name).Msg("stopping check")
 		close(stopCh)
 	}
-	delete(runner.stop, name)
-	delete(runner.checks, name)
-	delete(runner.status, name)
-	runner.Unlock()
+	delete(r.stop, name)
+	delete(r.checks, name)
+	delete(r.status, name)
+	r.Unlock()
+	if r.informer != nil {
+		err := r.informer.DeleteByName(name)
+		r.log.Err(err).Str("name", name).Msg("deleting check upstream")
+	}
 }
 
 // GetStatus returns the overall status of all the checks
-func (runner *CheckRunner) GetStatus() api.Statuses {
-	return runner.status
+func (r *Runner) GetStatus() api.Statuses {
+	return r.status
 }
 
 // GetStatusFor returns the status for the given check
-func (runner *CheckRunner) GetStatusFor(name string) (api.Status, bool) {
-	runner.RLock()
-	r, ok := runner.status[name]
-	runner.RUnlock()
-	return r, ok
+func (r *Runner) GetStatusFor(name string) (api.Status, bool) {
+	r.RLock()
+	n, ok := r.status[name]
+	r.RUnlock()
+	return n, ok
 }
 
 // updateStatusFor sets the status for the given check
-func (runner *CheckRunner) updateStatusFor(name string, r api.Status) {
-	runner.Lock()
-	runner.status[name] = r
-	runner.Unlock()
-	runner.updateMetricsFor(name)
+func (r *Runner) updateStatusFor(name string, status api.Status) {
+	r.Lock()
+	r.status[name] = status
+	r.Unlock()
+	r.updateMetricsFor(name)
 }
 
 // updateMetricsFor generates Prometheus metrics from the status of the given check
-func (runner *CheckRunner) updateMetricsFor(name string) {
-	status, ok := runner.GetStatusFor(name)
+func (r *Runner) updateMetricsFor(name string) {
+	status, ok := r.GetStatusFor(name)
 	if !ok {
-		runner.log.Warn().Str("name", name).Msg("status not found")
+		r.log.Warn().Str("name", name).Msg("status not found")
 		return
 	}
 	var statusVal float64
@@ -193,41 +216,73 @@ func (runner *CheckRunner) updateMetricsFor(name string) {
 }
 
 // Start schedules all the checks, running them periodically in the background, according to their configuration
-func (runner *CheckRunner) Start() context.CancelFunc {
+func (r *Runner) Start() context.CancelFunc {
 	ctx, stop := context.WithCancel(context.Background())
-	runner.Run(ctx)
+	r.Run(ctx)
 	return stop
 }
 
 // Run schedules all the checks, running them periodically in the background, according to their configuration
-func (runner *CheckRunner) Run(ctx context.Context) {
-	for name := range runner.checks {
-		if _, ok := runner.stop[name]; ok {
+// in the informer is configured, it will also set up a refresher to ensure the configuration is eventually consistent, even if we miss update events
+func (r *Runner) Run(ctx context.Context) {
+	for name := range r.checks {
+		if _, ok := r.stop[name]; ok {
 			// already running
 			continue
 		}
-		runner.stop[name] = make(chan struct{})
-		runner.run(ctx, name)
+		r.stop[name] = make(chan struct{})
+		r.schedule(ctx, name)
+	}
+	if r.informer != nil {
+		_ = r.upstreamRefresher(ctx)
 	}
 }
 
-// run executes the check
-func (runner *CheckRunner) run(ctx context.Context, name string) {
-	// ctx, _ = context.WithCancel(ctx)
+func (r *Runner) upstreamRefresher(ctx context.Context) error {
+	if r.informer == nil {
+		return fmt.Errorf("missing informer configuration")
+	}
+	r.log.Info().Msg("starting upstream refresher")
 	go func() {
-		time.Sleep(runner.checks[name].InitialDelay().Duration)
-		runner.check(ctx, name)
-		ticker := time.NewTicker(runner.checks[name].Interval().Duration)
+		ticker := time.NewTicker(r.upstreamRefresh)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
-				runner.check(ctx, name)
+				for name, check := range r.checks {
+					err := r.informer.DeleteByName(name)
+					r.log.Err(err).Str("name", name).Msg("deleting check upstream")
+					err = r.informer.CreateOrUpdate(check)
+					r.log.Err(err).Str("name", name).Msg("syncing check upstream")
+				}
 			case <-ctx.Done():
-				runner.log.Info().Str("name", name).Msg("stopping checks")
+				r.log.Info().Msg("stopping upstream refresher")
 				return
-			case <-runner.stop[name]:
-				runner.log.Info().Str("name", name).Msg("got quit signal stopping checks")
+			}
+		}
+	}()
+
+	return nil
+}
+
+// schedule executes the check on the configured interval
+func (r *Runner) schedule(ctx context.Context, name string) {
+	// ctx, _ = context.WithCancel(ctx)
+	r.log.Info().Str("name", name).Msg("starting checks")
+	go func() {
+		time.Sleep(r.checks[name].InitialDelay().Duration)
+		r.check(ctx, name)
+		ticker := time.NewTicker(r.checks[name].Interval().Duration)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				r.check(ctx, name)
+			case <-ctx.Done():
+				r.log.Info().Str("name", name).Msg("stopping checks")
+				return
+			case <-r.stop[name]:
+				r.log.Info().Str("name", name).Msg("got quit signal stopping checks")
 				return
 			}
 		}
@@ -235,17 +290,17 @@ func (runner *CheckRunner) run(ctx context.Context, name string) {
 }
 
 // Stop stops all checks
-func (runner *CheckRunner) Stop() {
-	for name := range runner.checks {
-		if stopCh, ok := runner.stop[name]; ok && stopCh != nil {
+func (r *Runner) Stop() {
+	for name := range r.checks {
+		if stopCh, ok := r.stop[name]; ok && stopCh != nil {
 			close(stopCh)
 		}
-		delete(runner.stop, name)
+		delete(r.stop, name)
 	}
 }
 
 // Syncer returns a sync function that fetches the state from the leader
-func (runner *CheckRunner) Syncer(useSSL bool, port int) func(string) {
+func (r *Runner) Syncer(useSSL bool, port int) func(string) {
 	protocol := "http"
 	if useSSL {
 		protocol += "s"
@@ -253,50 +308,50 @@ func (runner *CheckRunner) Syncer(useSSL bool, port int) func(string) {
 	return func(leader string) {
 		res, err := http.Get(fmt.Sprintf("%s://%s:%d/", protocol, leader, port))
 		if err != nil {
-			runner.log.Err(err).Msg("failed to sync")
+			r.log.Err(err).Msg("failed to sync")
 			return
 		}
 		defer res.Body.Close()
 		status := make(api.Statuses)
 		err = json.NewDecoder(res.Body).Decode(&status)
 		if err != nil {
-			runner.log.Err(err).Msg("failed to sync")
+			r.log.Err(err).Msg("failed to sync")
 			return
 		}
 
 		for name, result := range status {
-			runner.updateStatusFor(name, result)
+			r.updateStatusFor(name, result)
 		}
-		runner.log.Info().Msg("synced data from leader")
+		r.log.Info().Msg("synced data from leader")
 	}
 }
 
 // Check runs all the checks in parallel and waits for them to complete
-func (runner *CheckRunner) Check(ctx context.Context) {
+func (r *Runner) Check(ctx context.Context) {
 	var wg sync.WaitGroup
-	for name := range runner.checks {
+	for name := range r.checks {
 		wg.Add(1)
 		go func(name string, check api.Check) {
 			defer wg.Done()
 			time.Sleep(check.InitialDelay().Duration)
-			runner.check(ctx, name)
-		}(name, runner.checks[name])
+			r.check(ctx, name)
+		}(name, r.checks[name])
 	}
 	wg.Wait()
 }
 
-func (runner *CheckRunner) Summary() (allFailed, anyFailed bool) {
-	status := runner.GetStatus()
+func (r *Runner) Summary() (allFailed, anyFailed bool) {
+	status := r.GetStatus()
 	return status.Evaluate()
 }
 
 // check executes one check and stores the resulting status
-func (runner *CheckRunner) check(ctx context.Context, name string) {
+func (r *Runner) check(ctx context.Context, name string) {
 	var err error
-	status, _ := runner.GetStatusFor(name)
+	status, _ := r.GetStatusFor(name)
 	status.Error = ""
 	status.Timestamp = time.Now()
-	status.OK, err = runner.checks[name].Execute(ctx)
+	status.OK, err = r.checks[name].Execute(ctx)
 	if err != nil {
 		status.Error = err.Error()
 	}
@@ -309,6 +364,6 @@ func (runner *CheckRunner) check(ctx context.Context, name string) {
 	} else {
 		status.ContiguousFailures = 0
 	}
-	runner.log.Err(err).Bool("healthy", status.OK).Str("name", name).Msg("check status")
-	runner.updateStatusFor(name, status)
+	r.log.Err(err).Bool("healthy", status.OK).Str("name", name).Msg("check status")
+	r.updateStatusFor(name, status)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -26,6 +27,7 @@ import (
 var _ api.Check = &grpcCheck{}
 
 type grpcCheck struct {
+	name     string
 	config   *config.GRPCCheck
 	dialOpts []grpc.DialOption
 	callOpts []grpc.CallOption
@@ -111,10 +113,19 @@ func NewGrpcCheck(name string, config config.GRPCCheck) (api.Check, error) {
 	}
 
 	return &grpcCheck{
+		name:     name,
 		config:   &config,
 		dialOpts: dOpts,
 		callOpts: cOpts,
 	}, nil
+}
+
+func (c *grpcCheck) Config() (string, string, string, error) {
+	b, err := json.Marshal(c.config)
+	if err != nil {
+		return "", "", "", err
+	}
+	return "grpc", c.name, string(b), nil
 }
 
 // Interval indicates how often the check should be performed

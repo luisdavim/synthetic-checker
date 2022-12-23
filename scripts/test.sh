@@ -40,7 +40,7 @@ fi
 echo -e "-- PASS\n"
 
 echo "-- TEST: delete status 503"
-curl -s -X DELETE "http://localhost:8080/checks/http/stat503"
+curl -fs -X DELETE "http://localhost:8080/checks/http/stat503"
 status="$(curl -s "http://localhost:8080/" | jq -r '."stat503-http".error')"
 if [[ "${status}" != "null" ]]; then
   fail "unexpected status: $status; wanted: null"
@@ -48,7 +48,7 @@ fi
 echo -e "-- PASS\n"
 
 echo "-- TEST: add status 504"
-curl -s -X POST "http://localhost:8080/checks/http/stat503" -d '{"url": "https://httpstat.us/504", "interval": "5s"}'
+curl -fs -X POST "http://localhost:8080/checks/http/stat503" -d '{"url": "https://httpstat.us/504", "interval": "5s"}'
 sleep 1
 status="$(curl -s "http://localhost:8080/" | jq -r '."stat503-http".error')"
 if [[ "${status}" != "Unexpected status code: '504' expected: '200'" ]]; then
@@ -57,11 +57,19 @@ fi
 echo -e "-- PASS\n"
 
 echo "-- TEST: update status 503"
-curl -s -X POST "http://localhost:8080/checks/http/stat503" -d '{"url": "https://httpstat.us/503", "interval": "5s"}'
+curl -fs -X POST "http://localhost:8080/checks/http/stat503" -d '{"url": "https://httpstat.us/503", "interval": "5s"}'
 sleep 5
 status="$(curl -s "http://localhost:8080/" | jq -r '."stat503-http".error')"
 if [[ "${status}" != "Unexpected status code: '503' expected: '200'" ]]; then
   fail "unexpected status: $status; wanted: false"
+fi
+echo -e "-- PASS\n"
+
+echo "-- TEST: delete status 503 by name"
+curl -fs -X DELETE "http://localhost:8080/checks/stat503-http"
+status="$(curl -s "http://localhost:8080/" | jq -r '."stat503-http".error')"
+if [[ "${status}" != "null" ]]; then
+  fail "unexpected status: $status; wanted: null"
 fi
 echo -e "-- PASS\n"
 

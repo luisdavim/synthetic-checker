@@ -45,7 +45,7 @@ var additionalHostsAnnotations = []string{
 type IngressReconciler struct {
 	client.Client
 	Scheme  *runtime.Scheme
-	Checker *checker.CheckRunner
+	Checker *checker.Runner
 }
 
 func (r *IngressReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -179,9 +179,8 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 
 func (r *IngressReconciler) setDNSChecks(hosts, ports []string, interval metav1.Duration) error {
 	for i, host := range hosts {
-		name := host + "-dns"
 		d := time.Duration(i) + 1*time.Second
-		check, err := checks.NewDNSCheck(name,
+		check, err := checks.NewDNSCheck(host,
 			config.DNSCheck{
 				Host: host,
 				BaseCheck: config.BaseCheck{
@@ -192,7 +191,7 @@ func (r *IngressReconciler) setDNSChecks(hosts, ports []string, interval metav1.
 		if err != nil {
 			return err
 		}
-		r.Checker.AddCheck(name, check, true)
+		r.Checker.AddCheck(host+"-dns", check, true)
 	}
 
 	return nil
@@ -210,7 +209,7 @@ func (r *IngressReconciler) setConnChecks(lbs, ports, hosts []string, tls, noTLS
 			)
 			if !noTLS && (port == ":443" || tls) {
 				name = lb + "-tls"
-				check, err = checks.NewTLSCheck(name,
+				check, err = checks.NewTLSCheck(lb,
 					config.TLSCheck{
 						Address:             lb,
 						HostNames:           hosts,
@@ -222,7 +221,7 @@ func (r *IngressReconciler) setConnChecks(lbs, ports, hosts []string, tls, noTLS
 						},
 					})
 			} else {
-				check, err = checks.NewConnCheck(name,
+				check, err = checks.NewConnCheck(lb,
 					config.ConnCheck{
 						Address: lb,
 						BaseCheck: config.BaseCheck{
@@ -255,9 +254,8 @@ func (r *IngressReconciler) setHTTPChecks(hosts, ports, endpoints []string, inte
 				if strings.HasPrefix(port, ":80") {
 					scheme = "http://"
 				}
-				name := url + "-http"
 				url = scheme + url
-				check, err := checks.NewHTTPCheck(name,
+				check, err := checks.NewHTTPCheck(url,
 					config.HTTPCheck{
 						URL: url,
 						BaseCheck: config.BaseCheck{
@@ -268,7 +266,7 @@ func (r *IngressReconciler) setHTTPChecks(hosts, ports, endpoints []string, inte
 				if err != nil {
 					return err
 				}
-				r.Checker.AddCheck(name, check, true)
+				r.Checker.AddCheck(url+"-http", check, true)
 			}
 		}
 	}

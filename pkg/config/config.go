@@ -7,12 +7,31 @@ import (
 
 // Config represents the checks configuration
 type Config struct {
+	Informer   InformerCfg          `mapstructure:"informer,omitempty"`
 	HTTPChecks map[string]HTTPCheck `mapstructure:"httpChecks"`
 	DNSChecks  map[string]DNSCheck  `mapstructure:"dnsChecks"`
 	K8sChecks  map[string]K8sCheck  `mapstructure:"k8sChecks"`
 	ConnChecks map[string]ConnCheck `mapstructure:"connChecks"`
 	GRPCChecks map[string]GRPCCheck `mapstructure:"grpcChecks"`
 	TLSChecks  map[string]TLSCheck  `mapstructure:"tlsChecks"`
+}
+
+type InformerCfg struct {
+	// InformOnly, when set to true, will prevent the checks from being executed in the local instance
+	InformOnly bool `json:"informOnly,omitempty"`
+	// RefreshInterval indicates how often the checks will be refreshed upstream.
+	// checks are pushed upstream when they are created or updated, this help keeping the system level-triggered
+	// it defaults to 24h and should not be done too frequently.
+	RefreshInterval metav1.Duration `json:"syncInterval,omitempty"`
+	Upstreams       []Upstream      `mapstructure:"upstreams,omitempty"`
+}
+
+// Upstream represents an upstream synthetic-checker where to push checks to.
+// This is useful when combined with the insgress watcher to generate remote checks for the local cluster
+type Upstream struct {
+	URL     string            `mapstructure:"url"`
+	Headers map[string]string `mapstructure:"headers,omitempty"`
+	Timeout metav1.Duration   `mapstructure:"timeout,omitempty"`
 }
 
 // BaseCheck holds the common properties across checks

@@ -1,4 +1,4 @@
-{{- if .Values.checks }}
+{{- if or .Values.checks .Values.informer.upstreams }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -8,5 +8,11 @@ metadata:
     {{- include "synthetic-checker.labels" . | nindent 4 }}
 data:
   "checks.yaml": |
-    {{- toYaml .Values.checks | nindent 4 }}
+    {{- with .Values.checks }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.informer }}
+    informer:
+    {{- toYaml . | nindent 6 }}
+    {{- end }}
 {{- end }}

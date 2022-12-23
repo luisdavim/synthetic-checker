@@ -2,6 +2,7 @@ package checks
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"time"
@@ -15,6 +16,7 @@ import (
 var _ api.Check = &connCheck{}
 
 type connCheck struct {
+	name   string
 	config *config.ConnCheck
 	dialer *net.Dialer
 }
@@ -38,8 +40,17 @@ func NewConnCheck(name string, config config.ConnCheck) (api.Check, error) {
 	}
 
 	return &connCheck{
+		name:   name,
 		config: &config,
 	}, nil
+}
+
+func (c *connCheck) Config() (string, string, string, error) {
+	b, err := json.Marshal(c.config)
+	if err != nil {
+		return "", "", "", err
+	}
+	return "conn", c.name, string(b), nil
 }
 
 // Interval indicates how often the check should be performed

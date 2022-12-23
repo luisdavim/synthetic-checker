@@ -29,7 +29,7 @@ type LeaderElector struct {
 func NewLeaderElector(id, namespace string) (*LeaderElector, error)
 ```
 
-### func \(\*LeaderElector\) [RunLeaderElection](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/leaderelection/leader_election.go#L105>)
+### func \(\*LeaderElector\) [RunLeaderElection](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/leaderelection/leader_election.go#L107>)
 
 ```go
 func (l *LeaderElector) RunLeaderElection(ctx context.Context, run func(context.Context), sync func(leader string))

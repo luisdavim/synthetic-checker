@@ -20,7 +20,7 @@ import "github.com/luisdavim/synthetic-checker/pkg/checks"
   - [func (e ErrorUnexpectedStatus) Error() string](<#func-errorunexpectedstatus-error>)
 
 
-## func [NewConnCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/conn.go#L21>)
+## func [NewConnCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/conn.go#L25>)
 
 ```go
 func NewConnCheck(name string, config config.ConnCheck) (api.Check, error)
@@ -28,7 +28,7 @@ func NewConnCheck(name string, config config.ConnCheck) (api.Check, error)
 
 NewConnCheck returns a connectivity check for the given configuration
 
-## func [NewDNSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/dns.go#L22>)
+## func [NewDNSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/dns.go#L26>)
 
 ```go
 func NewDNSCheck(name string, config config.DNSCheck) (api.Check, error)
@@ -36,7 +36,7 @@ func NewDNSCheck(name string, config config.DNSCheck) (api.Check, error)
 
 NewDNSCheck returns a Check that makes sure the configured hosts can be resolved to at least \`MinRequiredResults\` result, within the timeout specified by the provided context.
 
-## func [NewGrpcCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/grpc.go#L66>)
+## func [NewGrpcCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/grpc.go#L69>)
 
 ```go
 func NewGrpcCheck(name string, config config.GRPCCheck) (api.Check, error)
@@ -44,7 +44,7 @@ func NewGrpcCheck(name string, config config.GRPCCheck) (api.Check, error)
 
 NewGrpcCheck returns a gRPC health check for the given configuration
 
-## func [NewHTTPCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/http.go#L47>)
+## func [NewHTTPCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/http.go#L51>)
 
 ```go
 func NewHTTPCheck(name string, config config.HTTPCheck) (api.Check, error)
@@ -52,7 +52,7 @@ func NewHTTPCheck(name string, config config.HTTPCheck) (api.Check, error)
 
 NewHTTPCheck creates a new http check from the given configuration
 
-## func [NewK8sCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/k8s.go#L32>)
+## func [NewK8sCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/k8s.go#L35>)
 
 ```go
 func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error)
@@ -60,7 +60,7 @@ func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error)
 
 NewK8sCheck returns a Kubernetes resource status check for the given configuration The status of a resource is determined by inspecting its status conditions
 
-## func [NewTLSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/tls.go#L24>)
+## func [NewTLSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/tls.go#L28>)
 
 ```go
 func NewTLSCheck(name string, config config.TLSCheck) (api.Check, error)
@@ -68,7 +68,7 @@ func NewTLSCheck(name string, config config.TLSCheck) (api.Check, error)
 
 NewTLSCheck returns a TLS connectivity check that validates is the address is reachable and presents a valid certificate it will also verify if the certificate is about to expire
 
-## type [ErrorUnexpectedBody](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/http.go#L36-L39>)
+## type [ErrorUnexpectedBody](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/http.go#L40-L43>)
 
 ErrorUnexpectedBody is returned when the service being checked returns an unexpected body
 
@@ -78,7 +78,7 @@ type ErrorUnexpectedBody struct {
 }
 ```
 
-### func \(ErrorUnexpectedBody\) [Error](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/http.go#L42>)
+### func \(ErrorUnexpectedBody\) [Error](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/http.go#L46>)
 
 ```go
 func (e ErrorUnexpectedBody) Error() string
@@ -86,7 +86,7 @@ func (e ErrorUnexpectedBody) Error() string
 
 Error makes ErrorUnexpectedBody implement the error interface
 
-## type [ErrorUnexpectedStatus](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/http.go#L25-L28>)
+## type [ErrorUnexpectedStatus](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/http.go#L29-L32>)
 
 ErrorUnexpectedStatus is returned when the service being checked returns an unexpected status code
 
@@ -96,7 +96,7 @@ type ErrorUnexpectedStatus struct {
 }
 ```
 
-### func \(ErrorUnexpectedStatus\) [Error](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/http.go#L31>)
+### func \(ErrorUnexpectedStatus\) [Error](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/http.go#L35>)
 
 ```go
 func (e ErrorUnexpectedStatus) Error() string

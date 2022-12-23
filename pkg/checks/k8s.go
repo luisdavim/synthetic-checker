@@ -2,6 +2,7 @@ package checks
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 var _ api.Check = &k8sCheck{}
 
 type k8sCheck struct {
+	name   string
 	config *config.K8sCheck
 	client client.Reader
 }
@@ -54,9 +56,18 @@ func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error) {
 	}
 
 	return &k8sCheck{
+		name:   name,
 		config: &config,
 		client: k8sClient,
 	}, nil
+}
+
+func (c *k8sCheck) Config() (string, string, string, error) {
+	b, err := json.Marshal(c.config)
+	if err != nil {
+		return "", "", "", err
+	}
+	return "k8s", c.name, string(b), nil
 }
 
 // Interval indicates how often the check should be performed

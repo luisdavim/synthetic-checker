@@ -50,7 +50,7 @@ func Init(cmd *cobra.Command)
 
 Init injects the server flags into a cobra command
 
-## func [LoadEnvConfig](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/server/config.go#L63>)
+## func [LoadEnvConfig](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/server/config.go#L62>)
 
 ```go
 func LoadEnvConfig(rootDir string) error
@@ -62,7 +62,7 @@ func LoadEnvConfig(rootDir string) error
 func PrettyJSON(b []byte) []byte
 ```
 
-## func [ReadConfig](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/server/config.go#L43>)
+## func [ReadConfig](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/server/config.go#L42>)
 
 ```go
 func ReadConfig(config *Config) error
@@ -79,7 +79,7 @@ type Auth struct {
 }
 ```
 
-## type [Config](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/server/config.go#L33-L41>)
+## type [Config](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/server/config.go#L32-L40>)
 
 Config holds the full application configuration
 
@@ -95,14 +95,13 @@ type Config struct {
 }
 ```
 
-## type [HTTP](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/server/config.go#L21-L30>)
+## type [HTTP](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/server/config.go#L21-L29>)
 
 HTTP holds the configuration for the HTTP server
 
 ```go
 type HTTP struct {
     Auth         Auth    `mapstructure:"auth,omitempty"`
-    OperatorAuth string  `mapstructure:"operatorAuth,omitempty"`
     Port         int     `mapstructure:"port,omitempty"`
     SecurePort   int     `mapstructure:"securePort,omitempty"`
     CertFile     string  `mapstructure:"certFile,omitempty"`
