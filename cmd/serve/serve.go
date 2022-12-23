@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/luisdavim/synthetic-checker/pkg/checker"
+	"github.com/luisdavim/synthetic-checker/pkg/checksapi"
 	"github.com/luisdavim/synthetic-checker/pkg/config"
 	"github.com/luisdavim/synthetic-checker/pkg/ingresswatcher"
 	"github.com/luisdavim/synthetic-checker/pkg/leaderelection"
@@ -63,15 +63,8 @@ func New(cfg *config.Config) *cobra.Command {
 				}
 			}
 
-			srv := server.New(srvCfg)
-			srv.WithShutdownFunc(func() error {
-				// ensure the checker routines are stopped
-				chkr.Stop()
-				time.Sleep(2 * time.Second)
-				return nil
-			})
-			setRoutes(chkr, srv, opts.failStatus, opts.degradedStatus) // Register Routes
-			srv.Run()                                                  // Start Server
+			srv := checksapi.New(chkr, srvCfg, opts.failStatus, opts.degradedStatus)
+			srv.Run()
 			return nil
 		},
 	}

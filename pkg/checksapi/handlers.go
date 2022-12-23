@@ -1,4 +1,4 @@
-package serve
+package checksapi
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ func statusHandler(chkr *checker.Runner, srv *server.Server, failStatus, degrade
 	}
 }
 
-func addCheckHandler(chkr *checker.Runner) http.HandlerFunc {
+func checkHandler(chkr *checker.Runner) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		if r.Method == http.MethodDelete {
@@ -40,6 +40,7 @@ func addCheckHandler(chkr *checker.Runner) http.HandlerFunc {
 				name += "-" + t
 			}
 			chkr.DelCheck(name)
+			return
 		}
 		b, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -74,7 +75,7 @@ func setRoutes(chkr *checker.Runner, srv *server.Server, failStatus, degradedSta
 			Name:    "status",
 		},
 		"/checks/{type}/{name}": {
-			Func:    addCheckHandler(chkr),
+			Func:    checkHandler(chkr),
 			Methods: []string{http.MethodPost, http.MethodPut, http.MethodDelete},
 			Name:    "add",
 		},
