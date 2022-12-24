@@ -302,7 +302,7 @@ func (r *Runner) Stop() {
 }
 
 // Syncer returns a sync function that fetches the state from the leader
-func (r *Runner) Syncer(useSSL bool, port int) func(string) {
+func (r *Runner) Syncer(selfID string, useSSL bool, port int) func(string) {
 	protocol := "http"
 	if useSSL {
 		protocol += "s"
@@ -314,9 +314,12 @@ func (r *Runner) Syncer(useSSL bool, port int) func(string) {
 			panic(err)
 		}
 	}
+	selfURL := fmt.Sprintf("%s://%s:%d/", protocol, selfID, port)
 	return func(leader string) {
 		leader = fmt.Sprintf("%s://%s:%d/", protocol, leader, port)
-		r.informer.AddUpstream(config.Upstream{URL: leader})
+		if leader != selfURL {
+			r.informer.AddUpstream(config.Upstream{URL: leader})
+		}
 		res, err := http.Get(leader)
 		if err != nil {
 			r.log.Err(err).Msg("failed to sync")

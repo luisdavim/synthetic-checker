@@ -58,7 +58,7 @@ func New(cfg *config.Config) *cobra.Command {
 						}
 						<-ctx.Done() // hold the routine, Run goes into the background
 					},
-					chkr.Syncer(false, srvCfg.HTTP.Port),
+					chkr.Syncer(le.ID, false, srvCfg.HTTP.Port),
 					func() {
 						chkr.Stop()
 						os.Exit(1) // TODO: is this overkill?

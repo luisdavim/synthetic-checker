@@ -21,7 +21,7 @@ import "github.com/luisdavim/synthetic-checker/pkg/checker"
   - [func (r *Runner) Start() context.CancelFunc](<#func-runner-start>)
   - [func (r *Runner) Stop()](<#func-runner-stop>)
   - [func (r *Runner) Summary() (allFailed, anyFailed bool)](<#func-runner-summary>)
-  - [func (r *Runner) Syncer(useSSL bool, port int) func(string)](<#func-runner-syncer>)
+  - [func (r *Runner) Syncer(selfID string, useSSL bool, port int) func(string)](<#func-runner-syncer>)
 
 
 ## type [Runner](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L42-L51>)
@@ -59,7 +59,7 @@ func (r *Runner) AddFromConfig(cfg config.Config, start bool) error
 
 AddFromConfig loads the checks from the given configuration
 
-### func \(\*Runner\) [Check](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L341>)
+### func \(\*Runner\) [Check](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L344>)
 
 ```go
 func (r *Runner) Check(ctx context.Context)
@@ -121,7 +121,7 @@ func (r *Runner) Stop()
 
 Stop stops all checks
 
-### func \(\*Runner\) [Summary](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L354>)
+### func \(\*Runner\) [Summary](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L357>)
 
 ```go
 func (r *Runner) Summary() (allFailed, anyFailed bool)
@@ -130,7 +130,7 @@ func (r *Runner) Summary() (allFailed, anyFailed bool)
 ### func \(\*Runner\) [Syncer](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checker/checker.go#L305>)
 
 ```go
-func (r *Runner) Syncer(useSSL bool, port int) func(string)
+func (r *Runner) Syncer(selfID string, useSSL bool, port int) func(string)
 ```
 
 Syncer returns a sync function that fetches the state from the leader
