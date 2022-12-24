@@ -179,6 +179,8 @@ func (r *Runner) DelCheck(name string) {
 
 // GetStatus returns the overall status of all the checks
 func (r *Runner) GetStatus() api.Statuses {
+	r.RLock()
+	defer r.RUnlock()
 	return r.status
 }
 
@@ -294,6 +296,8 @@ func (r *Runner) schedule(ctx context.Context, name string) {
 
 // Stop stops all checks
 func (r *Runner) Stop() {
+	r.Lock()
+	defer r.Unlock()
 	for name := range r.checks {
 		if stopCh, ok := r.stop[name]; ok && stopCh != nil {
 			close(stopCh)

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/rs/zerolog"
 
@@ -19,6 +20,7 @@ type Informer struct {
 	config []config.Upstream
 	log    zerolog.Logger
 	client *http.Client
+	sync.RWMutex
 }
 
 // New creates a new Informer
@@ -37,6 +39,8 @@ func New(config []config.Upstream) (*Informer, error) {
 }
 
 func (i *Informer) AddUpstream(u config.Upstream) {
+	i.Lock()
+	defer i.Unlock()
 	for _, c := range i.config {
 		if c.URL == u.URL {
 			return
@@ -46,9 +50,12 @@ func (i *Informer) AddUpstream(u config.Upstream) {
 }
 
 func (i *Informer) RemoveUpstream(url string) {
+	i.Lock()
+	defer i.Unlock()
 	for idx, c := range i.config {
 		if c.URL == url {
 			i.config = append(i.config[:idx], i.config[idx+1:]...)
+			return
 		}
 	}
 }
@@ -92,11 +99,13 @@ func (i *Informer) DeleteByName(name string) error {
 }
 
 func (i *Informer) informUpstreams(ctx context.Context, method, endpoint, body string) error {
+	i.RLock()
 	for _, c := range i.config {
 		url := fmt.Sprintf("%s/%s", c.URL, endpoint)
 		err := i.inform(ctx, c.Headers, method, url, body)
 		i.log.Log().Err(err).Msgf("informing %q or %s", url, method)
 	}
+	i.RUnlock()
 
 	return nil
 }
