@@ -307,8 +307,17 @@ func (r *Runner) Syncer(useSSL bool, port int) func(string) {
 	if useSSL {
 		protocol += "s"
 	}
+	if r.informer == nil {
+		var err error
+		r.informer, err = informer.New([]config.Upstream{})
+		if err != nil {
+			panic(err)
+		}
+	}
 	return func(leader string) {
-		res, err := http.Get(fmt.Sprintf("%s://%s:%d/", protocol, leader, port))
+		leader = fmt.Sprintf("%s://%s:%d/", protocol, leader, port)
+		r.informer.AddUpstream(config.Upstream{URL: leader})
+		res, err := http.Get(leader)
 		if err != nil {
 			r.log.Err(err).Msg("failed to sync")
 			return
