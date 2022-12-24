@@ -83,7 +83,7 @@ func NewWithRouter(cfg Config, r *mux.Router) *Server {
 		router:       r,
 		config:       cfg.HTTP,
 		stripSlashes: cfg.StripSlashes,
-		logger:       zerolog.New(os.Stderr).With().Timestamp().Str("name", "serverLogger").Logger().Level(logLevel),
+		logger:       zerolog.New(os.Stderr).With().Timestamp().Str("name", "server").Logger().Level(logLevel),
 	}
 
 	prometheus.MustRegister(httpRequestsTotal, httpRequestDuration)

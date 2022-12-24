@@ -57,7 +57,7 @@ func NewFromConfig(cfg config.Config, start bool) (*Runner, error) {
 		checks: make(api.Checks),
 		status: make(api.Statuses),
 		stop:   make(map[string](chan struct{})),
-		log:    zerolog.New(os.Stderr).With().Timestamp().Str("name", "checkerLogger").Logger().Level(zerolog.InfoLevel),
+		log:    zerolog.New(os.Stderr).With().Timestamp().Str("name", "checker").Logger().Level(zerolog.InfoLevel),
 	}
 
 	if err := r.AddFromConfig(cfg, start); err != nil {
@@ -238,6 +238,13 @@ func (r *Runner) Run(ctx context.Context) {
 	}
 }
 
+func (r *Runner) RefreshUpstreams() {
+	for name, check := range r.checks {
+		err := r.informer.Replace(check)
+		r.log.Err(err).Str("name", name).Msg("syncing check upstream")
+	}
+}
+
 func (r *Runner) upstreamRefresher(ctx context.Context) error {
 	if r.informer == nil {
 		return fmt.Errorf("missing informer configuration")
@@ -249,12 +256,7 @@ func (r *Runner) upstreamRefresher(ctx context.Context) error {
 		for {
 			select {
 			case <-ticker.C:
-				for name, check := range r.checks {
-					err := r.informer.DeleteByName(name)
-					r.log.Err(err).Str("name", name).Msg("deleting check upstream")
-					err = r.informer.CreateOrUpdate(check)
-					r.log.Err(err).Str("name", name).Msg("syncing check upstream")
-				}
+				r.RefreshUpstreams()
 			case <-ctx.Done():
 				r.log.Info().Msg("stopping upstream refresher")
 				return

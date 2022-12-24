@@ -123,7 +123,7 @@ func (l *LeaderElector) RunLeaderElection(ctx context.Context, run func(context.
 				os.Exit(1) // TODO: is this overkill?
 			},
 			OnNewLeader: func(currentID string) {
-				l.logger.Info().Msgf("new leader is %s, I am %s", currentID, l.ID)
+				l.logger.Info().Str("leader", l.Leader).Msgf("new leader is %s, I am %s", currentID, l.ID)
 				if l.ID == currentID {
 					l.logger.Info().Msg("I am the leader")
 					if l.Leader != "" { // if the sync never started, no need to stop it
@@ -131,7 +131,7 @@ func (l *LeaderElector) RunLeaderElection(ctx context.Context, run func(context.
 						done <- struct{}{} // stop the sync
 					}
 				} else {
-					l.logger.Info().Msg("starting sync loop")
+					l.logger.Info().Str("leader", currentID).Msg("starting sync loop")
 					go func() {
 						for {
 							select {
