@@ -45,6 +45,14 @@ func (i *Informer) AddUpstream(u config.Upstream) {
 	i.config = append(i.config, u)
 }
 
+func (i *Informer) RemoveUpstream(url string) {
+	for idx, c := range i.config {
+		if c.URL == url {
+			i.config = append(i.config[:idx], i.config[idx+1:]...)
+		}
+	}
+}
+
 // CreateOrUpdate sends the given check configuration to the configured upstreams
 func (i *Informer) CreateOrUpdate(check api.Check) error {
 	t, n, c, err := check.Config()

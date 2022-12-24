@@ -277,8 +277,7 @@ func TestSync(t *testing.T) {
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
-			sync := c.Syncer(false, 8080)
-			sync("leader")
+			c.sync("http://leader:8080/")
 			for name := range c.checks {
 				actual, ok := c.GetStatusFor(name)
 				if !ok {

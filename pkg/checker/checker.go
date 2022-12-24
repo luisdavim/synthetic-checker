@@ -45,6 +45,7 @@ type Runner struct {
 	stop            map[string](chan struct{})
 	log             zerolog.Logger
 	informer        *informer.Informer
+	leader          string
 	upstreamRefresh time.Duration
 	informOnly      bool
 	sync.RWMutex
@@ -318,26 +319,38 @@ func (r *Runner) Syncer(selfID string, useSSL bool, port int) func(string) {
 	return func(leader string) {
 		leader = fmt.Sprintf("%s://%s:%d/", protocol, leader, port)
 		if leader != selfURL {
+			r.informOnly = true
 			r.informer.AddUpstream(config.Upstream{URL: leader})
+		} else {
+			r.informOnly = false
 		}
-		res, err := http.Get(leader)
-		if err != nil {
-			r.log.Err(err).Msg("failed to sync")
-			return
+		if r.leader != "" && r.leader != leader {
+			r.informer.RemoveUpstream(r.leader)
+			if r.informOnly {
+				r.RefreshUpstreams()
+			}
 		}
-		defer res.Body.Close()
-		status := make(api.Statuses)
-		err = json.NewDecoder(res.Body).Decode(&status)
-		if err != nil {
-			r.log.Err(err).Msg("failed to sync")
-			return
-		}
-
-		for name, result := range status {
-			r.updateStatusFor(name, result)
-		}
-		r.log.Info().Msg("synced data from leader")
+		r.leader = leader
+		err := r.sync(leader)
+		r.log.Err(err).Msg("syncing data from leader")
 	}
+}
+
+func (r *Runner) sync(leader string) error {
+	res, err := http.Get(leader)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	status := make(api.Statuses)
+	err = json.NewDecoder(res.Body).Decode(&status)
+	if err != nil {
+		return err
+	}
+	for name, result := range status {
+		r.updateStatusFor(name, result)
+	}
+	return nil
 }
 
 // Check runs all the checks in parallel and waits for them to complete
