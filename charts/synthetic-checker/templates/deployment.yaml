@@ -58,7 +58,7 @@ spec:
               port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- if .Values.checks }}
+          {{- if or .Values.checks .Values.informer.upstreams }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
@@ -75,9 +75,9 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.checks }}
+      {{- if or .Values.checks .Values.informer.upstreams }}
       volumes:
         - name: config-volume
-          configMap:
-            name: {{ include "synthetic-checker.fullname" . }}
+          secret:
+            secretName: {{ include "synthetic-checker.fullname" . }}
       {{- end }}

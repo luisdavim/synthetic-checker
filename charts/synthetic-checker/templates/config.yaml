@@ -1,18 +1,12 @@
 {{- if or .Values.checks .Values.informer.upstreams }}
 ---
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
   name: {{ include "synthetic-checker.fullname" . }}
   labels:
     {{- include "synthetic-checker.labels" . | nindent 4 }}
+type: Opaque
 data:
-  "checks.yaml": |
-    {{- with .Values.checks }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-    {{- with .Values.informer }}
-    informer:
-    {{- toYaml . | nindent 6 }}
-    {{- end }}
+  "checks.yaml": {{ include "synthetic-checker.config" . | b64enc | quote }}
 {{- end }}

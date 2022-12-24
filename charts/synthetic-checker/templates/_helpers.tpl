@@ -79,3 +79,13 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{- define "synthetic-checker.config" }}
+{{- with .Values.checks }}
+{{- toYaml . }}
+{{- end }}
+{{- with .Values.informer }}
+informer:
+{{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
