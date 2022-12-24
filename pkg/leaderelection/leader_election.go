@@ -104,7 +104,7 @@ func NewLeaderElector(id, namespace string) (*LeaderElector, error) {
 	}, nil
 }
 
-func (l *LeaderElector) RunLeaderElection(ctx context.Context, run func(context.Context), sync func(leader string)) {
+func (l *LeaderElector) RunLeaderElection(ctx context.Context, run func(context.Context), sync func(leader string), stop func()) {
 	l.logger.Info().Msg("starting leader election runner")
 	done := make(chan struct{})
 	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
@@ -120,30 +120,31 @@ func (l *LeaderElector) RunLeaderElection(ctx context.Context, run func(context.
 			},
 			OnStoppedLeading: func() {
 				l.logger.Info().Msg("no longer the leader")
-				os.Exit(1) // TODO: is this overkill?
+				stop()
 			},
 			OnNewLeader: func(currentID string) {
 				l.logger.Info().Str("leader", l.Leader).Msgf("new leader is %s, I am %s", currentID, l.ID)
-				if l.ID == currentID {
-					l.logger.Info().Msg("I am the leader")
-					if l.Leader != "" { // if the sync never started, no need to stop it
-						l.logger.Info().Msg("stopping sync loop")
-						done <- struct{}{} // stop the sync
-					}
-				} else {
-					l.logger.Info().Str("leader", currentID).Msg("starting sync loop")
-					go func() {
-						for {
-							select {
-							case <-done:
-								return
-							default:
-								sync(currentID)
-							}
-							time.Sleep(9 * time.Second)
-						}
-					}()
+				if l.Leader != "" { // if the sync never started, no need to stop it
+					l.logger.Info().Msg("stopping sync loop")
+					done <- struct{}{} // stop the sync
 				}
+				if l.ID == currentID {
+					l.logger.Info().Str("leader", currentID).Msg("I am the leader")
+					l.Leader = ""
+					return
+				}
+				l.logger.Info().Str("leader", currentID).Msg("starting sync loop")
+				go func() {
+					for {
+						select {
+						case <-done:
+							return
+						default:
+							sync(currentID)
+						}
+						time.Sleep(9 * time.Second)
+					}
+				}()
 				l.Leader = currentID
 			},
 		},

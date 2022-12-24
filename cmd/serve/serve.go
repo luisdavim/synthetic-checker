@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -49,13 +50,20 @@ func New(cfg *config.Config) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				go le.RunLeaderElection(context.Background(), func(ctx context.Context) {
-					chkr.Run(ctx)
-					if opts.watchIngresses {
-						ingresswatcher.StartBackground(chkr, fmt.Sprintf(":%d", srvCfg.HTTP.Port+1), fmt.Sprintf(":%d", srvCfg.HTTP.Port+2), false)
-					}
-					<-ctx.Done() // hold the routine, Run goes into the background
-				}, chkr.Syncer(false, srvCfg.HTTP.Port))
+				go le.RunLeaderElection(context.Background(),
+					func(ctx context.Context) {
+						chkr.Run(ctx)
+						if opts.watchIngresses {
+							ingresswatcher.StartBackground(chkr, fmt.Sprintf(":%d", srvCfg.HTTP.Port+1), fmt.Sprintf(":%d", srvCfg.HTTP.Port+2), false)
+						}
+						<-ctx.Done() // hold the routine, Run goes into the background
+					},
+					chkr.Syncer(false, srvCfg.HTTP.Port),
+					func() {
+						chkr.Stop()
+						os.Exit(1) // TODO: is this overkill?
+					},
+				)
 			} else {
 				chkr.Run(context.Background())
 				if opts.watchIngresses {

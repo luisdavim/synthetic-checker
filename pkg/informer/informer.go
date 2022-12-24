@@ -8,9 +8,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/rs/zerolog"
+
 	"github.com/luisdavim/synthetic-checker/pkg/api"
 	"github.com/luisdavim/synthetic-checker/pkg/config"
-	"github.com/rs/zerolog"
 )
 
 // Informer allows syncing check configuration to upstream synthetic-checkers

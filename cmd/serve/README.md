@@ -11,7 +11,7 @@ import "github.com/luisdavim/synthetic-checker/cmd/serve"
 - [func New(cfg *config.Config) *cobra.Command](<#func-new>)
 
 
-## func [New](<https://github.com/luisdavim/synthetic-checker/blob/main/cmd/serve/serve.go#L27>)
+## func [New](<https://github.com/luisdavim/synthetic-checker/blob/main/cmd/serve/serve.go#L28>)
 
 ```go
 func New(cfg *config.Config) *cobra.Command
