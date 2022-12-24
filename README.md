@@ -149,22 +149,59 @@ Example configuration:
 informer:
   informOnly: true # when set to true, will prevent the checks from being executed in the local instance
   upstreams:
-    - url: https://synthetic-checker.example.com
+    - url: https://synthetic-checker.us.example.com
+    - url: https://synthetic-checker.eu.example.com
 ```
+
+### Watching ingress resources
+
+When running as a service in a k8s cluster, the tool can also watch `Ingress` resources and automatically setup checks for them.
+You can annotate your `Ingress` resources to control the checks configuration.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sample-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/server-alias: "test.example.com"
+    synthetic-checker/skip: "false" # set to true to ignore this resource, defaults to false
+    synthetic-checker/interval: "60s" # defaults to 30s
+    synthetic-checker/ports: "80,443" # defaults to 443
+    synthetic-checker/TLS: "false" # set this if all ports use TLS, defaults to false and only port 443 will use a TLS check
+    synthetic-checker/noTLS: "false" # set this to disable TLS checks and use connection checks only, defaults to false
+    synthetic-checker/endpoints: "/healthz,/readyz" # comma separated list of endpoints to build urls for HTTP checks
+spec:
+  ingressClassName: nginx-example
+  rules:
+    - host: "foo.bar.com"
+      http:
+        paths:
+          - path: /testpath
+            pathType: Prefix
+            backend:
+              service:
+                name: test
+                port:
+                  number: 80
+```
+
+By default, the tool will setup DNS and connection checks for each ingress. It will check that all the host names resolve and will check if port 443 is reacheable on the ingress's LBs and that the TLS certFile is not about to expire.
+
+### HA modes
+
+When running in Kubernetes, you have 2 options for running in HA mode.
+
+- Running multiple independent instances, where each will execute its own checks.
+  To use this mode set the `replicaCount` to any number higher than 1
+- Running multiple instances with leader election, were the leader will execute the checks and the followers will sync the results from it.
+  To use this mode set the `replicaCount` to any number higher than 1 and `k8sLeaderElection` to `true`
 
 ## Running as a service
 
 You can run the service locally with docker or using the built binary directly. Or, you can run it in a Kubernetes cluster using the provided Helm chart.
 
-### Using go run
-
-The simplest way to start the service is through the `go run` command:
-
-```sh
-go run main.go start
-```
-
-Once the service has been started, you can try its endpoints with curl.
+Once the service has been started, you can try its API endpoints with curl.
 
 Check the global status of all checks:
 
@@ -173,17 +210,17 @@ $ curl -s http://localhost:8080/ | jq .
 {
   "stat200-http": {
     "ok": true,
-    "timestamp": "2022-08-07T15:30:45.035296+01:00",
-    "duration": 438158210,
+    "timestamp": "2022-12-24T01:16:54.554431Z",
+    "duration": "437.32475ms",
     "contiguousFailures": 0,
     "timeOfFirstFailure": "0001-01-01T00:00:00Z"
   },
   "stat503-http": {
     "error": "Unexpected status code: '503' expected: '200'",
-    "timestamp": "2022-08-07T15:30:50.033884+01:00",
-    "duration": 420079871,
-    "contiguousFailures": 14,
-    "timeOfFirstFailure": "2022-08-07T15:28:40.045752+01:00"
+    "timestamp": "2022-12-24T01:16:54.554441Z",
+    "duration": "438.6635ms",
+    "contiguousFailures": 1,
+    "timeOfFirstFailure": "2022-12-24T01:16:54.554441Z"
   }
 }
 ```
@@ -224,6 +261,16 @@ check_status_total{name="stat200-http",status="success"} 4
 check_status_up{name="stat200-http"} 1
 ```
 
+The API also allows adding or removing check configurations at runtime, check the integration tests [script](./scripts/test.sh) for some examples.
+
+### Using go run
+
+The simplest way to start the service is through the `go run` command:
+
+```sh
+go run main.go start
+```
+
 ### Using Docker
 
 You can run the service through Docker with the following commands:
@@ -254,50 +301,6 @@ And deploy the service using the following command:
 ```sh
 helm upgrade --install -n <target_namespace> -f <path/to/your/custom_values.yaml> synthetic-checker ./charts/synthetic-checker
 ```
-
-#### Watching ingress resources
-
-When running as a service in a k8s cluster, the tool can also watch `Ingress` resources and automatically setup checks for them.
-You can annotate your `Ingress` resources to control the checks configuration.
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: sample-ingress
-  annotations:
-    nginx.ingress.kubernetes.io/server-alias: "test.example.com"
-    synthetic-checker/skip: "false" # set to true to ignore this resource, defaults to false
-    synthetic-checker/interval: "60s" # defaults to 30s
-    synthetic-checker/ports: "80,443" # defaults to 443
-    synthetic-checker/TLS: "false" # set this if all ports use TLS, defaults to false and only port 443 will use a TLS check
-    synthetic-checker/noTLS: "false" # set this to disable TLS checks and use connection checks only, defaults to false
-    synthetic-checker/endpoints: "/healthz,/readyz" # comma separated list of endpoints to build urls for HTTP checks
-spec:
-  ingressClassName: nginx-example
-  rules:
-    - host: "foo.bar.com"
-      http:
-        paths:
-          - path: /testpath
-            pathType: Prefix
-            backend:
-              service:
-                name: test
-                port:
-                  number: 80
-```
-
-By default, the tool will setup DNS and connection checks for each ingress. It will check that all the host names resolve and will check if port 443 is reacheable on the ingress's LBs and that the TLS certFile is not about to expire.
-
-#### HA modes
-
-When running in Kubernetes, you have 2 options for running in HA mode.
-
-- Running multiple independent instances, where each will execute its own checks.
-  To use this mode set the `replicaCount` to any number higher than 1
-- Running multiple instances with leader election, were the leader will execute the checks and the followers will sync the results from it.
-  To use this mode set the `replicaCount` to any number higher than 1 and `k8sLeaderElection` to `true`
 
 ### In local Kubernetes using helm and colima
 

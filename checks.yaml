@@ -1,4 +1,8 @@
 ---
+# informer:
+#   informOnly: true # when set to true, will prevent the checks from being executed in the local instance
+#   upstreams:
+#     - url: https://synthetic-checker.example.com
 httpChecks:
   stat503:
     url: https://httpstat.us/503
