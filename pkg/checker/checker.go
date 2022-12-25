@@ -319,13 +319,14 @@ func (r *Runner) Syncer(selfID string, useSSL bool, port int) func(string) {
 			panic(err)
 		}
 	}
+	starttedAsInformer := r.informOnly
 	selfURL := fmt.Sprintf("%s://%s:%d/", protocol, selfID, port)
 	return func(leader string) {
 		leader = fmt.Sprintf("%s://%s:%d/", protocol, leader, port)
 		if leader != selfURL {
 			r.informOnly = true
 			r.informer.AddUpstream(config.Upstream{URL: leader})
-		} else {
+		} else if !starttedAsInformer {
 			r.informOnly = false
 		}
 		if r.leader != "" && r.leader != leader {
