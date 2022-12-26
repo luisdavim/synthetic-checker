@@ -1,6 +1,6 @@
 # Synthetic Checker
 
-The synthetic checker is a tool to run synthetic checks and track their statusses.
+The synthetic checker is a tool to run synthetic tests (checks) and track their statusses.
 The tool supports the following types of checks:
 
 - HTTP
@@ -13,6 +13,8 @@ The tool supports the following types of checks:
 More types of checks can be added in the future.
 
 Checks can be executed periodically and asynchronously in the background.
+
+## Development
 
 To make development easier, a [Makefile](./Makefile) is provided, run `make` with no arguments to get a list of all available options.
 To run all the linters, tests and build a binary, run `make build`
