@@ -199,14 +199,14 @@ k8s_schemas: ## Get json schemas from CRDs to validate helm templates
 	@[ -e openapi2jsonschema.py.original ] && rm openapi2jsonschema.py.original
 
 helm-test: k8s_schemas ## Test the helm chart
-	echo -e "$(YELLOW)>>>$(RESET) Testing $(GREEN)Chart$(RESET) with $(CYAN)Default values$(RESET)"; \
+	@echo -e "$(YELLOW)>>>$(RESET) Testing $(GREEN)Chart$(RESET) with $(CYAN)Default values$(RESET)"; \
 	helm template $(CHARTS_DIR)  | kubeconform  $(KUBECONFORM_FLGS)
 	@set -eo pipefail; \
 		for values in $(CHARTS_DIR)/ci/*.yaml; do \
 		  echo -e "\n$(YELLOW)>>>$(RESET) Testing $(GREEN)Chart$(RESET) with $(CYAN)$$(basename $$values)$(RESET)"; \
 		  helm template $(CHARTS_DIR) --namespace dev --values $$values | kubeconform $(KUBECONFORM_FLGS); \
 		done
-	echo -e "\n$(YELLOW)>>>$(RESET) Testing $(GREEN)Chart$(RESET) with $(CYAN)All ci values files$(RESET)"; \
+	@echo -e "\n$(YELLOW)>>>$(RESET) Testing $(GREEN)Chart$(RESET) with $(CYAN)All ci values files$(RESET)"; \
 	helm template $(CHARTS_DIR) --namespace dev $(shell printf -- "-f %s " ${CHARTS_DIR}/ci/*.yaml) | kubeconform $(KUBECONFORM_FLGS)
 
 ## Docker:
@@ -225,11 +225,11 @@ docs: fmt usagedoc gomarkdoc-pkg gomarkdoc-cmd helm-docs ## Generate project doc
 	rm -rf docs
 	mkdir -p docs
 	gomarkdoc --output 'docs/{{.Dir}}/README.md' ./...
-	echo -e '\n## Packages\n' >> docs/README.md; for d in $$(find ./docs -type f -name '*.md' | sort); do path="$${d##./docs/}"; name="$${path%/*}"; echo "- [$${name/README.md/$(PROJECTNAME)}]($${path})" >> docs/README.md; done
+	@echo -e '\n## Packages\n' >> docs/README.md; for d in $$(find ./docs -type f -name '*.md' | sort); do path="$${d##./docs/}"; name="$${path%/*}"; echo "- [$${name/README.md/$(PROJECTNAME)}]($${path})" >> docs/README.md; done
 
 gomarkdoc-%: ## Use gomarkdoc to generate documentation for packages in the % folder
 	[ ! -d "$(*)" ] || for d in $(*)/*/; do gomarkdoc --output "$${d}README.md" "$(REPO)/$${d%/*}"; done
-	echo -e '# Packages\n' > $(*)/README.md; for d in $$(find ./$(*)/ -type f -name '*.md' | sort); do path="$${d##./$(*)/}"; name="$${path%/*}"; echo "- [$${name/README.md/$(PROJECTNAME)}]($${path})" >> $(*)/README.md; done
+	@echo -e '# Packages\n' > $(*)/README.md; for d in $$(find ./$(*)/ -type f -name '*.md' | sort); do path="$${d##./$(*)/}"; name="$${path%/*}"; echo "- [$${name/README.md/$(PROJECTNAME)}]($${path})" >> $(*)/README.md; done
 
 gomarkdoc: ## Use gomarkdoc to generate documentation for the whole project
 	gomarkdoc --output '{{.Dir}}/README.md' ./...
