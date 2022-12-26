@@ -18,17 +18,18 @@ import "github.com/luisdavim/synthetic-checker/pkg/informer"
   - [func (i *Informer) Replace(check api.Check) error](<#func-informer-replace>)
 
 
-## type [Informer](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L18-L22>)
+## type [Informer](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L19-L24>)
 
 Informer allows syncing check configuration to upstream synthetic\-checkers
 
 ```go
 type Informer struct {
+    sync.RWMutex
     // contains filtered or unexported fields
 }
 ```
 
-### func [New](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L25>)
+### func [New](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L27>)
 
 ```go
 func New(config []config.Upstream) (*Informer, error)
@@ -36,13 +37,13 @@ func New(config []config.Upstream) (*Informer, error)
 
 New creates a new Informer
 
-### func \(\*Informer\) [AddUpstream](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L39>)
+### func \(\*Informer\) [AddUpstream](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L41>)
 
 ```go
 func (i *Informer) AddUpstream(u config.Upstream)
 ```
 
-### func \(\*Informer\) [CreateOrUpdate](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L57>)
+### func \(\*Informer\) [CreateOrUpdate](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L64>)
 
 ```go
 func (i *Informer) CreateOrUpdate(check api.Check) error
@@ -50,7 +51,7 @@ func (i *Informer) CreateOrUpdate(check api.Check) error
 
 CreateOrUpdate sends the given check configuration to the configured upstreams
 
-### func \(\*Informer\) [Delete](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L66>)
+### func \(\*Informer\) [Delete](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L73>)
 
 ```go
 func (i *Informer) Delete(check api.Check) error
@@ -58,7 +59,7 @@ func (i *Informer) Delete(check api.Check) error
 
 Delete deletes the given check configuration from the configured upstreams
 
-### func \(\*Informer\) [DeleteByName](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L90>)
+### func \(\*Informer\) [DeleteByName](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L97>)
 
 ```go
 func (i *Informer) DeleteByName(name string) error
@@ -66,13 +67,13 @@ func (i *Informer) DeleteByName(name string) error
 
 DeleteByName removes the given check configuration from the configured upstreams
 
-### func \(\*Informer\) [RemoveUpstream](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L48>)
+### func \(\*Informer\) [RemoveUpstream](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L52>)
 
 ```go
 func (i *Informer) RemoveUpstream(url string)
 ```
 
-### func \(\*Informer\) [Replace](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L74>)
+### func \(\*Informer\) [Replace](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/informer/informer.go#L81>)
 
 ```go
 func (i *Informer) Replace(check api.Check) error

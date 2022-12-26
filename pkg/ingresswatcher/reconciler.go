@@ -6,9 +6,11 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -22,14 +24,16 @@ import (
 )
 
 const (
-	finalizerName       = "synthetic-checker/finalizer"
-	skipAnnotation      = "synthetic-checker/skip"
-	tlsAnnotation       = "synthetic-checker/TLS"
-	noTLSAnnotation     = "synthetic-checker/noTLS"
-	portsAnnotation     = "synthetic-checker/ports"
-	intervalAnnotation  = "synthetic-checker/interval"
-	endpointsAnnotation = "synthetic-checker/endpoints"
-	defaultLBPort       = ":443"
+	defaultLBPort        = ":443"
+	annotationPrefix     = "synthetic-checker"
+	finalizerName        = annotationPrefix + "/finalizer"
+	skipAnnotation       = annotationPrefix + "/skip"
+	tlsAnnotation        = annotationPrefix + "/TLS"
+	noTLSAnnotation      = annotationPrefix + "/noTLS"
+	portsAnnotation      = annotationPrefix + "/ports"
+	intervalAnnotation   = annotationPrefix + "/interval"
+	endpointsAnnotation  = annotationPrefix + "/endpoints"
+	configFromAnnotation = annotationPrefix + "/configFrom"
 )
 
 // TODO: allow the user to extend this list
@@ -169,8 +173,12 @@ func (r *IngressReconciler) setup(ingress *netv1.Ingress) error {
 	}
 
 	// setup http checks
+	httpCfg, err := r.getHTTPConfig(ingress)
+	if err != nil {
+		return err
+	}
 	endpoints := getEndpoints(ingress)
-	if err := r.setHTTPChecks(hosts, ports, endpoints, interval); err != nil {
+	if err := r.setHTTPChecks(hosts, ports, endpoints, httpCfg, interval); err != nil {
 		return err
 	}
 
@@ -240,9 +248,13 @@ func (r *IngressReconciler) setConnChecks(lbs, ports, hosts []string, tls, noTLS
 	return nil
 }
 
-func (r *IngressReconciler) setHTTPChecks(hosts, ports, endpoints []string, interval metav1.Duration) error {
+func (r *IngressReconciler) setHTTPChecks(hosts, ports, endpoints []string, cfg config.HTTPCheck, interval metav1.Duration) error {
 	if len(endpoints) == 0 {
-		return nil
+		if cfg.Headers != nil || cfg.Body != "" || cfg.Method != "" {
+			endpoints = append(endpoints, "")
+		} else {
+			return nil
+		}
 	}
 
 	for i, host := range hosts {
@@ -257,7 +269,10 @@ func (r *IngressReconciler) setHTTPChecks(hosts, ports, endpoints []string, inte
 				url = scheme + url
 				check, err := checks.NewHTTPCheck(url,
 					config.HTTPCheck{
-						URL: url,
+						URL:     url,
+						Headers: cfg.Headers,
+						Method:  cfg.Method,
+						Body:    cfg.Body,
 						BaseCheck: config.BaseCheck{
 							InitialDelay: metav1.Duration{Duration: d},
 							Interval:     interval,
@@ -272,6 +287,30 @@ func (r *IngressReconciler) setHTTPChecks(hosts, ports, endpoints []string, inte
 	}
 
 	return nil
+}
+
+func (r *IngressReconciler) getHTTPConfig(ingress *netv1.Ingress) (config.HTTPCheck, error) {
+	var cfg config.HTTPCheck
+	if s, ok := ingress.Annotations[configFromAnnotation]; ok {
+		secret := corev1.Secret{}
+		if err := r.Get(context.Background(), types.NamespacedName{Namespace: ingress.Namespace, Name: s}, &secret); err != nil {
+			return cfg, err
+		}
+		for k, v := range secret.Data {
+			switch k {
+			case "body":
+				cfg.Body = string(v)
+			case "method":
+				cfg.Method = string(v)
+			default:
+				if cfg.Headers == nil {
+					cfg.Headers = make(map[string]string)
+				}
+				cfg.Headers[k] = string(v)
+			}
+		}
+	}
+	return cfg, nil
 }
 
 func (r *IngressReconciler) cleanup(ingress *netv1.Ingress) error {

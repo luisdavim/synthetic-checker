@@ -29,7 +29,7 @@ func Start(chkr *checker.Runner, metricsAddr, probeAddr string, enableLeaderElec
 func StartBackground(chkr *checker.Runner, metricsAddr, probeAddr string, enableLeaderElection bool)
 ```
 
-## type [IngressReconciler](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/reconciler.go#L45-L49>)
+## type [IngressReconciler](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/reconciler.go#L49-L53>)
 
 IngressReconciler reconciles a Ingress object
 
@@ -41,13 +41,13 @@ type IngressReconciler struct {
 }
 ```
 
-### func \(\*IngressReconciler\) [Reconcile](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/reconciler.go#L95>)
+### func \(\*IngressReconciler\) [Reconcile](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/reconciler.go#L99>)
 
 ```go
 func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error)
 ```
 
-### func \(\*IngressReconciler\) [SetupWithManager](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/reconciler.go#L51>)
+### func \(\*IngressReconciler\) [SetupWithManager](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/ingresswatcher/reconciler.go#L55>)
 
 ```go
 func (r *IngressReconciler) SetupWithManager(mgr ctrl.Manager) error

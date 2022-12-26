@@ -156,7 +156,10 @@ informer:
 ### Watching ingress resources
 
 When running as a service in a k8s cluster, the tool can also watch `Ingress` resources and automatically setup checks for them.
+By default, the tool will setup DNS and connection checks for each ingress. It will check that all the host names resolve and will check if port 443 is reacheable on the ingress's LBs and that the TLS certFile is not about to expire.
 You can annotate your `Ingress` resources to control the checks configuration.
+No HTTP checks willl be create if both the endpoints and the configFrom annotations are missing.
+If the `synthetic-checker/configFrom` annotation is set, and points to a valid secret, but the `synthetic-checker/endpoints` is not, an HTTP check will be set up with an empty endpoint.
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -171,6 +174,7 @@ metadata:
     synthetic-checker/TLS: "false" # set this if all ports use TLS, defaults to false and only port 443 will use a TLS check
     synthetic-checker/noTLS: "false" # set this to disable TLS checks and use connection checks only, defaults to false
     synthetic-checker/endpoints: "/healthz,/readyz" # comma separated list of endpoints to build urls for HTTP checks
+    synthetic-checker/configFrom: "cfgSecret" # name of a k8s secret, in the same namespace as the Ingress, with check configuration
 spec:
   ingressClassName: nginx-example
   rules:
@@ -186,7 +190,21 @@ spec:
                   number: 80
 ```
 
-By default, the tool will setup DNS and connection checks for each ingress. It will check that all the host names resolve and will check if port 443 is reacheable on the ingress's LBs and that the TLS certFile is not about to expire.
+You can keep some configuration in a K8s `Secret` and link it to an `Ingress` resource through the `synthetic-checker/configFrom` annotation, the expected format for that secret is as follows:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cfgSecret
+type: Opaque
+stringData: # using stringData here just to make the config example more clear
+  method: POST # HTTP method to use (optional)
+  body: '{"foo": "bar", "some": "payload"}' # Body to use in the check requests (optional)
+  foo: bar # any key that is not one of body or method is assumed to be an header to use in the check requests
+  some: value # add as manay headers as needed
+  Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l # the main reason for using a secret is that you might need to set some auth headers
+```
 
 ### HA modes
 
