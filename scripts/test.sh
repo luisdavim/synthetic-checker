@@ -16,12 +16,12 @@ EOF
 # SRV_PID=$!
 
 sleep 10
-SRV_PID=$(lsof -nP | grep 'TCP \*:8080 (LISTEN)' | awk '{print $2}')
+SRV_PID=$(lsof -tnPi TCP:8080)
 
 function fail() {
-  echo "Error: ${1}"
   kill "${SRV_PID}"
   rm "${CFG_FILE}"
+  echo "Error: ${1}"
   exit 1
 }
 
@@ -78,14 +78,14 @@ cat << EOF > "${CFG_FILE2}"
 informer:
   informOnly: true # when set to true, will prevent the checks from being executed in the local instance
   upstreams:
-    - url: https://127.0.0.1:8080
+    - url: http://127.0.0.1:8080
 EOF
 
 (go run main.go serve -c "${CFG_FILE2}" -p 8081) &
 # SRV_PID=$!
 
 sleep 10
-SRV_PID2=$(lsof -nP | grep 'TCP \*:8080 (LISTEN)' | awk '{print $2}')
+SRV_PID2=$(lsof -tnPi TCP:8081)
 
 function fail2() {
   kill "${SRV_PID2}"

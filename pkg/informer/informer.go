@@ -103,7 +103,7 @@ func (i *Informer) informUpstreams(ctx context.Context, method, endpoint, body s
 	for _, c := range i.config {
 		url := fmt.Sprintf("%s/%s", c.URL, endpoint)
 		err := i.inform(ctx, c.Headers, method, url, body)
-		i.log.Log().Err(err).Msgf("informing %q or %s", url, method)
+		i.log.Log().Err(err).Msgf("informing %q of %s", url, method)
 	}
 	i.RUnlock()
 
