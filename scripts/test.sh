@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-FILE_NAME="$(mktemp)"
-cat << EOF > "${FILE_NAME}"
+CFG_FILE="$(mktemp)"
+cat << EOF > "${CFG_FILE}"
 httpChecks:
   stat503:
     url: https://httpstat.us/503
@@ -12,7 +12,7 @@ httpChecks:
     initialDelay: 2s
 EOF
 
-(go run main.go serve -c "${FILE_NAME}") &
+(go run main.go serve -c "${CFG_FILE}") &
 # SRV_PID=$!
 
 sleep 10
@@ -21,7 +21,7 @@ SRV_PID=$(lsof -nP | grep 'TCP \*:8080 (LISTEN)' | awk '{print $2}')
 function fail() {
   echo "Error: ${1}"
   kill "${SRV_PID}"
-  rm "${FILE_NAME}"
+  rm "${CFG_FILE}"
   exit 1
 }
 
@@ -73,5 +73,36 @@ if [[ "${status}" != "null" ]]; then
 fi
 echo -e "-- PASS\n"
 
+CFG_FILE2="$(mktemp)"
+cat << EOF > "${CFG_FILE2}"
+informer:
+  informOnly: true # when set to true, will prevent the checks from being executed in the local instance
+  upstreams:
+    - url: https://127.0.0.1:8080
+EOF
+
+(go run main.go serve -c "${CFG_FILE2}" -p 8081) &
+# SRV_PID=$!
+
+sleep 10
+SRV_PID2=$(lsof -nP | grep 'TCP \*:8080 (LISTEN)' | awk '{print $2}')
+
+function fail2() {
+  kill "${SRV_PID2}"
+  rm "${CFG_FILE2}"
+  fail "${1}"
+}
+
+echo "-- TEST: add status 404 to informer"
+curl -fs -X POST "http://localhost:8081/checks/http/stat404" -d '{"url": "https://httpstat.us/404", "interval": "5s"}'
+sleep 1
+status="$(curl -s "http://localhost:8080/" | jq -r '."stat404-http".error')"
+if [[ "${status}" != "Unexpected status code: '404' expected: '200'" ]]; then
+  fail2 "unexpected status: $status; wanted: false"
+fi
+echo -e "-- PASS\n"
+
+kill "${SRV_PID2}"
+rm "${CFG_FILE2}"
 kill "${SRV_PID}"
-rm "${FILE_NAME}"
+rm "${CFG_FILE}"
