@@ -11,12 +11,18 @@ import "github.com/luisdavim/synthetic-checker/pkg/config"
 - [type BaseCheck](<#type-basecheck>)
 - [type Config](<#type-config>)
 - [type ConnCheck](<#type-conncheck>)
+  - [func (c ConnCheck) Equal(other ConnCheck) bool](<#func-conncheck-equal>)
 - [type DNSCheck](<#type-dnscheck>)
+  - [func (c DNSCheck) Equal(other DNSCheck) bool](<#func-dnscheck-equal>)
 - [type GRPCCheck](<#type-grpccheck>)
+  - [func (c GRPCCheck) Equal(other GRPCCheck) bool](<#func-grpccheck-equal>)
 - [type HTTPCheck](<#type-httpcheck>)
+  - [func (c HTTPCheck) Equal(other HTTPCheck) bool](<#func-httpcheck-equal>)
 - [type InformerCfg](<#type-informercfg>)
 - [type K8sCheck](<#type-k8scheck>)
+  - [func (c K8sCheck) Equal(other K8sCheck) bool](<#func-k8scheck-equal>)
 - [type TLSCheck](<#type-tlscheck>)
+  - [func (c TLSCheck) Equal(other TLSCheck) bool](<#func-tlscheck-equal>)
 - [type Upstream](<#type-upstream>)
 
 
@@ -71,6 +77,12 @@ type ConnCheck struct {
 }
 ```
 
+### func \(ConnCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L111>)
+
+```go
+func (c ConnCheck) Equal(other ConnCheck) bool
+```
+
 ## type [DNSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L119-L125>)
 
 DNSCheck configures a probe to check if a DNS record resolves
@@ -83,6 +95,12 @@ type DNSCheck struct {
     MinRequiredResults int `mapstructure:"minRequiredResults,omitempty"`
     BaseCheck
 }
+```
+
+### func \(DNSCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L107>)
+
+```go
+func (c DNSCheck) Equal(other DNSCheck) bool
 ```
 
 ## type [GRPCCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L67-L99>)
@@ -125,6 +143,12 @@ type GRPCCheck struct {
 }
 ```
 
+### func \(GRPCCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L31>)
+
+```go
+func (c GRPCCheck) Equal(other GRPCCheck) bool
+```
+
 ## type [HTTPCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L49-L64>)
 
 HTTPCheck configures a check for the response from a given URL. The only required field is \`URL\`, which must be a valid URL.
@@ -146,6 +170,12 @@ type HTTPCheck struct {
     ExpectedBody string `mapstructure:"expectedBody,omitempty"`
     BaseCheck
 }
+```
+
+### func \(HTTPCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L8>)
+
+```go
+func (c HTTPCheck) Equal(other HTTPCheck) bool
 ```
 
 ## type [InformerCfg](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L19-L27>)
@@ -182,6 +212,12 @@ type K8sCheck struct {
 }
 ```
 
+### func \(K8sCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L115>)
+
+```go
+func (c K8sCheck) Equal(other K8sCheck) bool
+```
+
 ## type [TLSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L102-L116>)
 
 TLSCheck configures a TLS connection check, including certificate validation
@@ -202,6 +238,12 @@ type TLSCheck struct {
     SkipChainValidation bool `mapstructure:"skipChainValidation,omitempty"`
     BaseCheck
 }
+```
+
+### func \(TLSCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L88>)
+
+```go
+func (c TLSCheck) Equal(other TLSCheck) bool
 ```
 
 ## type [Upstream](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L31-L35>)
