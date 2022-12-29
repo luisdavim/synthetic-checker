@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/alecthomas/chroma v0.10.0
 	github.com/didip/tollbooth/v7 v7.0.1
+	github.com/google/go-cmp v0.5.9
 	github.com/gorilla/mux v1.8.0
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/prometheus/client_golang v1.14.0
@@ -14,6 +15,7 @@ require (
 	github.com/spf13/viper v1.14.0
 	github.com/spiffe/go-spiffe/v2 v2.1.1
 	github.com/subosito/gotenv v1.4.1
+	golang.org/x/exp v0.0.0-20221227203929-1b447090c38c
 	google.golang.org/grpc v1.51.0
 	k8s.io/api v0.26.0
 	k8s.io/apimachinery v0.26.0
@@ -44,7 +46,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect

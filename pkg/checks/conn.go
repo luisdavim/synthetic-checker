@@ -45,6 +45,10 @@ func NewConnCheck(name string, config config.ConnCheck) (api.Check, error) {
 	}, nil
 }
 
+func (c *connCheck) Equal(other *connCheck) bool {
+	return c.config.Equal(*other.config)
+}
+
 func (c *connCheck) Config() (string, string, string, error) {
 	b, err := json.Marshal(c.config)
 	if err != nil {

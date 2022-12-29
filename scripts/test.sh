@@ -35,7 +35,7 @@ echo -e "-- PASS\n"
 echo "-- TEST: status 503"
 status="$(curl -s "http://localhost:8080/" | jq -r '."stat503-http".error')"
 if [[ "${status}" != "Unexpected status code: '503' expected: '200'" ]]; then
-  fail "unexpected status: $status; wanted: false"
+  fail "unexpected status: $status; wanted: 503"
 fi
 echo -e "-- PASS\n"
 
@@ -52,16 +52,16 @@ curl -fs -X POST "http://localhost:8080/checks/http/stat503" -d '{"url": "https:
 sleep 1
 status="$(curl -s "http://localhost:8080/" | jq -r '."stat503-http".error')"
 if [[ "${status}" != "Unexpected status code: '504' expected: '200'" ]]; then
-  fail "unexpected status: $status; wanted: false"
+  fail "unexpected status: $status; wanted: 504"
 fi
 echo -e "-- PASS\n"
 
 echo "-- TEST: update status 503"
 curl -fs -X POST "http://localhost:8080/checks/http/stat503" -d '{"url": "https://httpstat.us/503", "interval": "5s"}'
-sleep 5
+sleep 6
 status="$(curl -s "http://localhost:8080/" | jq -r '."stat503-http".error')"
 if [[ "${status}" != "Unexpected status code: '503' expected: '200'" ]]; then
-  fail "unexpected status: $status; wanted: false"
+  fail "unexpected status: $status; wanted: 503"
 fi
 echo -e "-- PASS\n"
 
@@ -76,7 +76,7 @@ echo -e "-- PASS\n"
 CFG_FILE2="$(mktemp)"
 cat << EOF > "${CFG_FILE2}"
 informer:
-  informOnly: true # when set to true, will prevent the checks from being executed in the local instance
+  informOnly: true
   upstreams:
     - url: http://127.0.0.1:8080
 EOF

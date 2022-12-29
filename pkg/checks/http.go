@@ -83,6 +83,10 @@ func NewHTTPCheck(name string, config config.HTTPCheck) (api.Check, error) {
 	return check, nil
 }
 
+func (c *httpCheck) Equal(other *httpCheck) bool {
+	return c.config.Equal(*other.config)
+}
+
 func (c *httpCheck) Config() (string, string, string, error) {
 	b, err := json.Marshal(c.config)
 	if err != nil {

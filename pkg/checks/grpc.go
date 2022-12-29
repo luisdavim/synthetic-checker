@@ -120,6 +120,10 @@ func NewGrpcCheck(name string, config config.GRPCCheck) (api.Check, error) {
 	}, nil
 }
 
+func (c *grpcCheck) Equal(other *grpcCheck) bool {
+	return c.config.Equal(*other.config)
+}
+
 func (c *grpcCheck) Config() (string, string, string, error) {
 	b, err := json.Marshal(c.config)
 	if err != nil {

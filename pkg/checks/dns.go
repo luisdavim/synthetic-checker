@@ -46,6 +46,10 @@ func NewDNSCheck(name string, config config.DNSCheck) (api.Check, error) {
 	}, nil
 }
 
+func (c *dnsCheck) Equal(other *dnsCheck) bool {
+	return c.config.Equal(*other.config)
+}
+
 func (c *dnsCheck) Config() (string, string, string, error) {
 	b, err := json.Marshal(c.config)
 	if err != nil {

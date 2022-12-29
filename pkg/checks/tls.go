@@ -58,6 +58,10 @@ func NewTLSCheck(name string, config config.TLSCheck) (api.Check, error) {
 	}, nil
 }
 
+func (c *tlsCheck) Equal(other *tlsCheck) bool {
+	return c.config.Equal(*other.config)
+}
+
 func (c *tlsCheck) Config() (string, string, string, error) {
 	b, err := json.Marshal(c.config)
 	if err != nil {

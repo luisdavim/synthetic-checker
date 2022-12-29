@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -146,14 +147,14 @@ func (r *Runner) AddCheck(name string, check api.Check, start bool) {
 	}
 	r.log.Info().Str("name", name).Msg("new check")
 	r.Lock()
-	_, found := r.checks[name]
+	cur, found := r.checks[name]
 	r.checks[name] = check
 	if !found && start {
 		r.stop[name] = make(chan struct{})
 		r.schedule(context.Background(), name)
 	}
 	r.Unlock()
-	if r.informer != nil {
+	if r.informer != nil && (!found || !cmp.Equal(&cur, &check)) {
 		err := r.informer.CreateOrUpdate(check)
 		r.log.Err(err).Str("name", name).Msg("syncing check upstream")
 	}
@@ -163,6 +164,7 @@ func (r *Runner) AddCheck(name string, check api.Check, start bool) {
 func (r *Runner) DelCheck(name string) {
 	r.log.Info().Str("name", name).Msg("deleting check")
 	r.Lock()
+	_, found := r.checks[name]
 	if stopCh, ok := r.stop[name]; ok && stopCh != nil {
 		r.log.Info().Str("name", name).Msg("stopping check")
 		close(stopCh)
@@ -171,7 +173,7 @@ func (r *Runner) DelCheck(name string) {
 	delete(r.checks, name)
 	delete(r.status, name)
 	r.Unlock()
-	if r.informer != nil {
+	if r.informer != nil && found {
 		err := r.informer.DeleteByName(name)
 		r.log.Err(err).Str("name", name).Msg("deleting check upstream")
 	}

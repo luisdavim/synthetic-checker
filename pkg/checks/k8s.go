@@ -62,6 +62,10 @@ func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error) {
 	}, nil
 }
 
+func (c *k8sCheck) Equal(other *k8sCheck) bool {
+	return c.config.Equal(*other.config)
+}
+
 func (c *k8sCheck) Config() (string, string, string, error) {
 	b, err := json.Marshal(c.config)
 	if err != nil {
