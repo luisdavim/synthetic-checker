@@ -57,7 +57,7 @@ type Config struct {
 }
 ```
 
-## type [ConnCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L128-L140>)
+## type [ConnCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L130-L142>)
 
 ConnCheck configures a conntivity check
 
@@ -77,13 +77,13 @@ type ConnCheck struct {
 }
 ```
 
-### func \(ConnCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L111>)
+### func \(ConnCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L114>)
 
 ```go
 func (c ConnCheck) Equal(other ConnCheck) bool
 ```
 
-## type [DNSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L119-L125>)
+## type [DNSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L121-L127>)
 
 DNSCheck configures a probe to check if a DNS record resolves
 
@@ -97,13 +97,13 @@ type DNSCheck struct {
 }
 ```
 
-### func \(DNSCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L107>)
+### func \(DNSCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L110>)
 
 ```go
 func (c DNSCheck) Equal(other DNSCheck) bool
 ```
 
-## type [GRPCCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L67-L99>)
+## type [GRPCCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L69-L101>)
 
 GRPCCheck configures a gRPC health check probe
 
@@ -143,13 +143,13 @@ type GRPCCheck struct {
 }
 ```
 
-### func \(GRPCCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L31>)
+### func \(GRPCCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L34>)
 
 ```go
 func (c GRPCCheck) Equal(other GRPCCheck) bool
 ```
 
-## type [HTTPCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L49-L64>)
+## type [HTTPCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L49-L66>)
 
 HTTPCheck configures a check for the response from a given URL. The only required field is \`URL\`, which must be a valid URL.
 
@@ -168,6 +168,8 @@ type HTTPCheck struct {
     ExpectedStatus int `mapstructure:"expectedStatus,omitempty"`
     // ExpectedBody is optional; if defined, makes the check fail if the response body does not match
     ExpectedBody string `mapstructure:"expectedBody,omitempty"`
+    // CertExpiryThreshold is the minimum amount of time that the TLS certificate should be valid for
+    CertExpiryThreshold metav1.Duration `mapstructure:"expiryThreshold,omitempty"`
     BaseCheck
 }
 ```
@@ -192,7 +194,7 @@ type InformerCfg struct {
 }
 ```
 
-## type [K8sCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L144-L156>)
+## type [K8sCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L146-L158>)
 
 K8sCheck configures a check that probes the status of a Kubernetes resource. It supports any resource type that uses standard k8s status conditions.
 
@@ -212,13 +214,13 @@ type K8sCheck struct {
 }
 ```
 
-### func \(K8sCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L115>)
+### func \(K8sCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L118>)
 
 ```go
 func (c K8sCheck) Equal(other K8sCheck) bool
 ```
 
-## type [TLSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L102-L116>)
+## type [TLSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L104-L118>)
 
 TLSCheck configures a TLS connection check, including certificate validation
 
@@ -240,7 +242,7 @@ type TLSCheck struct {
 }
 ```
 
-### func \(TLSCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L88>)
+### func \(TLSCheck\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L91>)
 
 ```go
 func (c TLSCheck) Equal(other TLSCheck) bool

@@ -21,6 +21,9 @@ func (c HTTPCheck) Equal(other HTTPCheck) bool {
 	if c.ExpectedStatus != other.ExpectedStatus {
 		return false
 	}
+	if c.CertExpiryThreshold != other.CertExpiryThreshold {
+		return false
+	}
 	if c.BaseCheck != other.BaseCheck {
 		return false
 	}

@@ -60,6 +60,8 @@ type HTTPCheck struct {
 	ExpectedStatus int `mapstructure:"expectedStatus,omitempty"`
 	// ExpectedBody is optional; if defined, makes the check fail if the response body does not match
 	ExpectedBody string `mapstructure:"expectedBody,omitempty"`
+	// CertExpiryThreshold is the minimum amount of time that the TLS certificate should be valid for
+	CertExpiryThreshold metav1.Duration `mapstructure:"expiryThreshold,omitempty"`
 	BaseCheck
 }
 

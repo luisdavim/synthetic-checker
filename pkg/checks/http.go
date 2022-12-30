@@ -120,6 +120,13 @@ func (c *httpCheck) Execute(ctx context.Context) (bool, error) {
 		}
 	}
 
+	if c.config.CertExpiryThreshold.Duration != 0 && resp.TLS != nil {
+		ttl := time.Until(resp.TLS.PeerCertificates[0].NotAfter)
+		if ttl <= c.config.CertExpiryThreshold.Duration {
+			return false, fmt.Errorf("the certificate will expire in %s", humanDuration(ttl))
+		}
+	}
+
 	if c.config.ExpectedBody != "" {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
