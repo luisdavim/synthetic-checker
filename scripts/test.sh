@@ -23,7 +23,7 @@ SRV_PID=$(lsof -tnPi TCP:8080)
 function fail() {
   kill "${SRV_PID}"
   rm "${SERVER_CFG}"
-  echo "Error: ${1}"
+  echo "-- FAIL: ${1}"
   exit 1
 }
 
@@ -74,6 +74,8 @@ if [[ "${status}" != "null" ]]; then
   fail "unexpected status: $status; wanted: null"
 fi
 echo -e "-- PASS\n"
+
+echo -e "\n-- INFORMER TESTs --\n"
 
 INFORMER_CFG="$(mktemp)"
 cat << EOF > "${INFORMER_CFG}"
