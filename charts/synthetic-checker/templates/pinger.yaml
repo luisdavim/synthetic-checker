@@ -1,17 +1,19 @@
+{{- if .Values.nodepinger }}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
-  name: {{ include "synthetic-checker.fullname" . }}
+  name: {{ include "synthetic-checker.fullname" . }}-pinger
   labels:
     {{- include "synthetic-checker.labels" . | nindent 4 }}
+    app: nodepinger
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
-  {{- end }}
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       {{- include "synthetic-checker.selectorLabels" . | nindent 6 }}
+      app: nodepinger
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -20,6 +22,7 @@ spec:
       {{- end }}
       labels:
         {{- include "synthetic-checker.selectorLabels" . | nindent 8 }}
+        app: nodepinger
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -59,26 +62,47 @@ spec:
               port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- if or .Values.checks .Values.informer.upstreams }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
-          {{- end }}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if or .Values.checks .Values.informer.upstreams }}
       volumes:
         - name: config-volume
           secret:
-            secretName: {{ include "synthetic-checker.fullname" . }}
-      {{- end }}
+            secretName: {{ include "synthetic-checker.fullname" . }}-pinger
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "synthetic-checker.fullname" . }}
+  labels:
+    {{- include "synthetic-checker.labels" . | nindent 4 }}
+type: Opaque
+dataString:
+  "checks.yaml": |
+    k8sPings:
+      nodepinger:
+        labelSelector: "{{ (include "synthetic-checker.selectorLabels" .) | replace ": " "=" | replace "\n" "," }},app=nodepinger"
+        interval: 30s
+        port: {{ .Values.service.containerPort }}
+        namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "synthetic-checker.fullname" . }}-pinger
+  labels: {{- include "synthetic-checker.labels" . | nindent 4 }}
+    app: nodepinger
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector: {{- include "synthetic-checker.selectorLabels" . | nindent 4 }}
+    app: nodepinger
+{{- end }}

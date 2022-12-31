@@ -58,6 +58,7 @@ statusCodes:
 replicaCount: 1
 k8sLeaderElection: false
 watchIngresses: false
+nodepinger: false
 
 image:
   repository: synthetic-checker

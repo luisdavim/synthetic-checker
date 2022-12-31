@@ -9,11 +9,12 @@ import (
 type Config struct {
 	Informer   InformerCfg          `mapstructure:"informer,omitempty"`
 	HTTPChecks map[string]HTTPCheck `mapstructure:"httpChecks"`
-	DNSChecks  map[string]DNSCheck  `mapstructure:"dnsChecks"`
-	K8sChecks  map[string]K8sCheck  `mapstructure:"k8sChecks"`
-	ConnChecks map[string]ConnCheck `mapstructure:"connChecks"`
 	GRPCChecks map[string]GRPCCheck `mapstructure:"grpcChecks"`
+	DNSChecks  map[string]DNSCheck  `mapstructure:"dnsChecks"`
+	ConnChecks map[string]ConnCheck `mapstructure:"connChecks"`
 	TLSChecks  map[string]TLSCheck  `mapstructure:"tlsChecks"`
+	K8sChecks  map[string]K8sCheck  `mapstructure:"k8sChecks"`
+	K8sPing    map[string]K8sPing   `mapstructure:"k8sPings"`
 }
 
 type InformerCfg struct {
@@ -128,7 +129,7 @@ type DNSCheck struct {
 
 // ConnCheck configures a conntivity check
 type ConnCheck struct {
-	// Address is the IP address or host to ping
+	// Address is the IP address or host and port to ping
 	// see the net.Dial docs for details
 	Address string `mapstructure:"address,omitempty"`
 	// Protocol to use, defaults to tcp
@@ -154,5 +155,19 @@ type K8sCheck struct {
 	LabelSelector string `mapstructure:"labelSelector,omitempty"`
 	// FieldSelector comma separated list of key=value fields
 	FieldSelector string `mapstructure:"fieldSelector,omitempty"`
+	BaseCheck
+}
+
+// K8sPing is a conntivity check that will try to connect to all Pods matching the selector
+type K8sPing struct {
+	// Namespace is the namespace where to look for the resource
+	Namespace string `mapstructure:"namespace,omitempty"`
+	// LabelSelector comma separated list of key=value labels
+	LabelSelector string `mapstructure:"labelSelector,omitempty"`
+	// Protocol to use, defaults to tcp
+	// see the net.Dial doccs for details
+	Protocol string `mapstructure:"protocol,omitempty"`
+	// Port to ping
+	Port int `mapstructure:"port,omitempty"`
 	BaseCheck
 }

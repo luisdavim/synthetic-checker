@@ -118,3 +118,7 @@ func (c ConnCheck) Equal(other ConnCheck) bool {
 func (c K8sCheck) Equal(other K8sCheck) bool {
 	return c == other
 }
+
+func (c K8sPing) Equal(other K8sPing) bool {
+	return c == other
+}
