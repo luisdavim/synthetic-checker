@@ -13,6 +13,7 @@ import "github.com/luisdavim/synthetic-checker/pkg/checks"
 - [func NewGrpcCheck(name string, config config.GRPCCheck) (api.Check, error)](<#func-newgrpccheck>)
 - [func NewHTTPCheck(name string, config config.HTTPCheck) (api.Check, error)](<#func-newhttpcheck>)
 - [func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error)](<#func-newk8scheck>)
+- [func NewK8sPing(name string, config config.K8sPing) (api.Check, error)](<#func-newk8sping>)
 - [func NewTLSCheck(name string, config config.TLSCheck) (api.Check, error)](<#func-newtlscheck>)
 - [type ErrorUnexpectedBody](<#type-errorunexpectedbody>)
   - [func (e ErrorUnexpectedBody) Error() string](<#func-errorunexpectedbody-error>)
@@ -59,6 +60,12 @@ func NewK8sCheck(name string, config config.K8sCheck) (api.Check, error)
 ```
 
 NewK8sCheck returns a Kubernetes resource status check for the given configuration The status of a resource is determined by inspecting its status conditions
+
+## func [NewK8sPing](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/k8s_ping.go#L29>)
+
+```go
+func NewK8sPing(name string, config config.K8sPing) (api.Check, error)
+```
 
 ## func [NewTLSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/checks/tls.go#L28>)
 

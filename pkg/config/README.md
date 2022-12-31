@@ -21,12 +21,14 @@ import "github.com/luisdavim/synthetic-checker/pkg/config"
 - [type InformerCfg](<#type-informercfg>)
 - [type K8sCheck](<#type-k8scheck>)
   - [func (c K8sCheck) Equal(other K8sCheck) bool](<#func-k8scheck-equal>)
+- [type K8sPing](<#type-k8sping>)
+  - [func (c K8sPing) Equal(other K8sPing) bool](<#func-k8sping-equal>)
 - [type TLSCheck](<#type-tlscheck>)
   - [func (c TLSCheck) Equal(other TLSCheck) bool](<#func-tlscheck-equal>)
 - [type Upstream](<#type-upstream>)
 
 
-## type [BaseCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L38-L45>)
+## type [BaseCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L39-L46>)
 
 BaseCheck holds the common properties across checks
 
@@ -41,7 +43,7 @@ type BaseCheck struct {
 }
 ```
 
-## type [Config](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L9-L17>)
+## type [Config](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L9-L18>)
 
 Config represents the checks configuration
 
@@ -49,21 +51,22 @@ Config represents the checks configuration
 type Config struct {
     Informer   InformerCfg          `mapstructure:"informer,omitempty"`
     HTTPChecks map[string]HTTPCheck `mapstructure:"httpChecks"`
-    DNSChecks  map[string]DNSCheck  `mapstructure:"dnsChecks"`
-    K8sChecks  map[string]K8sCheck  `mapstructure:"k8sChecks"`
-    ConnChecks map[string]ConnCheck `mapstructure:"connChecks"`
     GRPCChecks map[string]GRPCCheck `mapstructure:"grpcChecks"`
+    DNSChecks  map[string]DNSCheck  `mapstructure:"dnsChecks"`
+    ConnChecks map[string]ConnCheck `mapstructure:"connChecks"`
     TLSChecks  map[string]TLSCheck  `mapstructure:"tlsChecks"`
+    K8sChecks  map[string]K8sCheck  `mapstructure:"k8sChecks"`
+    K8sPing    map[string]K8sPing   `mapstructure:"k8sPings"`
 }
 ```
 
-## type [ConnCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L130-L142>)
+## type [ConnCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L131-L143>)
 
 ConnCheck configures a conntivity check
 
 ```go
 type ConnCheck struct {
-    // Address is the IP address or host to ping
+    // Address is the IP address or host and port to ping
     // see the net.Dial docs for details
     Address string `mapstructure:"address,omitempty"`
     // Protocol to use, defaults to tcp
@@ -83,7 +86,7 @@ type ConnCheck struct {
 func (c ConnCheck) Equal(other ConnCheck) bool
 ```
 
-## type [DNSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L121-L127>)
+## type [DNSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L122-L128>)
 
 DNSCheck configures a probe to check if a DNS record resolves
 
@@ -103,7 +106,7 @@ type DNSCheck struct {
 func (c DNSCheck) Equal(other DNSCheck) bool
 ```
 
-## type [GRPCCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L69-L101>)
+## type [GRPCCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L70-L102>)
 
 GRPCCheck configures a gRPC health check probe
 
@@ -149,7 +152,7 @@ type GRPCCheck struct {
 func (c GRPCCheck) Equal(other GRPCCheck) bool
 ```
 
-## type [HTTPCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L49-L66>)
+## type [HTTPCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L50-L67>)
 
 HTTPCheck configures a check for the response from a given URL. The only required field is \`URL\`, which must be a valid URL.
 
@@ -180,7 +183,7 @@ type HTTPCheck struct {
 func (c HTTPCheck) Equal(other HTTPCheck) bool
 ```
 
-## type [InformerCfg](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L19-L27>)
+## type [InformerCfg](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L20-L28>)
 
 ```go
 type InformerCfg struct {
@@ -194,7 +197,7 @@ type InformerCfg struct {
 }
 ```
 
-## type [K8sCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L146-L158>)
+## type [K8sCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L147-L159>)
 
 K8sCheck configures a check that probes the status of a Kubernetes resource. It supports any resource type that uses standard k8s status conditions.
 
@@ -220,7 +223,32 @@ type K8sCheck struct {
 func (c K8sCheck) Equal(other K8sCheck) bool
 ```
 
-## type [TLSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L104-L118>)
+## type [K8sPing](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L162-L173>)
+
+K8sPing is a conntivity check that will try to connect to all Pods matching the selector
+
+```go
+type K8sPing struct {
+    // Namespace is the namespace where to look for the resource
+    Namespace string `mapstructure:"namespace,omitempty"`
+    // LabelSelector comma separated list of key=value labels
+    LabelSelector string `mapstructure:"labelSelector,omitempty"`
+    // Protocol to use, defaults to tcp
+    // see the net.Dial doccs for details
+    Protocol string `mapstructure:"protocol,omitempty"`
+    // Port to ping
+    Port int `mapstructure:"port,omitempty"`
+    BaseCheck
+}
+```
+
+### func \(K8sPing\) [Equal](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/equal.go#L122>)
+
+```go
+func (c K8sPing) Equal(other K8sPing) bool
+```
+
+## type [TLSCheck](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L105-L119>)
 
 TLSCheck configures a TLS connection check, including certificate validation
 
@@ -248,7 +276,7 @@ type TLSCheck struct {
 func (c TLSCheck) Equal(other TLSCheck) bool
 ```
 
-## type [Upstream](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L31-L35>)
+## type [Upstream](<https://github.com/luisdavim/synthetic-checker/blob/main/pkg/config/config.go#L32-L36>)
 
 Upstream represents an upstream synthetic\-checker where to push checks to. This is useful when combined with the insgress watcher to generate remote checks for the local cluster
 

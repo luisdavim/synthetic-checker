@@ -7,13 +7,14 @@ import (
 	"net"
 	"time"
 
-	"github.com/luisdavim/synthetic-checker/pkg/api"
-	"github.com/luisdavim/synthetic-checker/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	konfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+
+	"github.com/luisdavim/synthetic-checker/pkg/api"
+	"github.com/luisdavim/synthetic-checker/pkg/config"
 )
 
 var _ api.Check = &k8sPinger{}
@@ -113,7 +114,7 @@ func (c *k8sPinger) Execute(ctx context.Context) (bool, error) {
 
 	errCount := len(errs)
 	for _, e := range errs {
-		err = fmt.Errorf("%d of %d resources are not ok: %w", errCount, resCount, e)
+		err = fmt.Errorf("%d of %d resources are not reachable: %w", errCount, resCount, e)
 	}
 	return allOK, err
 }
