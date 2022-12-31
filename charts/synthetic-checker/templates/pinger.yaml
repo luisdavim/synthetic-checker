@@ -42,12 +42,6 @@ spec:
             - -p {{ .Values.service.containerPort }}
             - -F {{ .Values.statusCodes.failed }}
             - -D {{ .Values.statusCodes.degraded }}
-          {{- if and (or (gt (int .Values.replicaCount) 1) .Values.autoscaling.enabled) .Values.k8sLeaderElection }}
-            - --k8s-leader-election
-          {{- end }}
-          {{- if .Values.watchIngresses }}
-            - --watch-ingresses
-          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.containerPort }}
