@@ -76,7 +76,7 @@ func (c *connCheck) Execute(ctx context.Context) (bool, error) {
 	}
 
 	conn, err := c.dialer.DialContext(ctx, c.config.Protocol, c.config.Address)
-	if err == nil {
+	if conn != nil {
 		_ = conn.Close()
 	}
 	ok := err == nil

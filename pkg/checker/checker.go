@@ -111,6 +111,15 @@ func (r *Runner) AddFromConfig(cfg config.Config, start bool) error {
 		r.AddCheck(name+"-k8s", check, start)
 	}
 
+	// setup K8s pings
+	for name, config := range cfg.K8sPings {
+		check, err := checks.NewK8sPing(name, config)
+		if err != nil {
+			return err
+		}
+		r.AddCheck(name+"-k8sping", check, start)
+	}
+
 	// setup conn checks
 	for name, config := range cfg.ConnChecks {
 		check, err := checks.NewConnCheck(name, config)

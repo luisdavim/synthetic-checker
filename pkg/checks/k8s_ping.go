@@ -68,7 +68,7 @@ func (c *k8sPinger) Config() (string, string, string, error) {
 	if err != nil {
 		return "", "", "", err
 	}
-	return "k8s", c.name, string(b), nil
+	return "k8sping", c.name, string(b), nil
 }
 
 // Interval indicates how often the check should be performed
@@ -107,9 +107,10 @@ func (c *k8sPinger) Execute(ctx context.Context) (bool, error) {
 		if err != nil {
 			allOK = false
 			errs = append(errs, err)
-			continue
 		}
-		_ = conn.Close()
+		if conn != nil {
+			_ = conn.Close()
+		}
 	}
 
 	errCount := len(errs)

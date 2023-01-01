@@ -14,7 +14,7 @@ type Config struct {
 	ConnChecks map[string]ConnCheck `mapstructure:"connChecks"`
 	TLSChecks  map[string]TLSCheck  `mapstructure:"tlsChecks"`
 	K8sChecks  map[string]K8sCheck  `mapstructure:"k8sChecks"`
-	K8sPing    map[string]K8sPing   `mapstructure:"k8sPings"`
+	K8sPings   map[string]K8sPing   `mapstructure:"k8sPings"`
 }
 
 type InformerCfg struct {
