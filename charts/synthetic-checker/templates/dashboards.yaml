@@ -5,6 +5,7 @@ metadata:
   name: {{ .Release.Name }}-dashboards
   namespace: {{ .Values.prometheus.operator.namespace }}
   labels:
+    {{- include "synthetic-checker.labels" . | nindent 4 }}
     grafana_dashboard: "1"
 data:
   {{ (.Files.Glob "dashboards/*.json").AsConfig | nindent 2 }}

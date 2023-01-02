@@ -6,6 +6,7 @@ metadata:
   name: {{ include "synthetic-checker.fullname" . }}
   labels:
     {{- include "synthetic-checker.labels" . | nindent 4 }}
+    app: synthetic-checker
 type: Opaque
 data:
   "checks.yaml": {{ include "synthetic-checker.config" . | b64enc | quote }}

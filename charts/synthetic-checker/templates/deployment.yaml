@@ -5,6 +5,7 @@ metadata:
   name: {{ include "synthetic-checker.fullname" . }}
   labels:
     {{- include "synthetic-checker.labels" . | nindent 4 }}
+    app: synthetic-checker
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -12,6 +13,7 @@ spec:
   selector:
     matchLabels:
       {{- include "synthetic-checker.selectorLabels" . | nindent 6 }}
+      app: synthetic-checker
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -20,6 +22,7 @@ spec:
       {{- end }}
       labels:
         {{- include "synthetic-checker.selectorLabels" . | nindent 8 }}
+        app: synthetic-checker
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

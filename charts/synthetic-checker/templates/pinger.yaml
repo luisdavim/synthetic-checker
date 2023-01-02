@@ -74,6 +74,7 @@ metadata:
   name: {{ include "synthetic-checker.fullname" . }}
   labels:
     {{- include "synthetic-checker.labels" . | nindent 4 }}
+    app: nodepinger
 type: Opaque
 dataString:
   "checks.yaml": |
@@ -97,6 +98,7 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-  selector: {{- include "synthetic-checker.selectorLabels" . | nindent 4 }}
+  selector:
+    {{- include "synthetic-checker.selectorLabels" . | nindent 4 }}
     app: nodepinger
 {{- end }}
