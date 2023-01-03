@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/rs/zerolog"
 
 	"github.com/luisdavim/synthetic-checker/pkg/api"
@@ -19,7 +20,7 @@ import (
 type Informer struct {
 	config []config.Upstream
 	log    zerolog.Logger
-	client *http.Client
+	client *retryablehttp.Client
 	sync.RWMutex
 }
 
@@ -31,11 +32,14 @@ func New(config []config.Upstream) (*Informer, error) {
 		}
 	}
 
-	return &Informer{
+	informer := &Informer{
 		config: config,
-		client: &http.Client{},
+		client: retryablehttp.NewClient(),
 		log:    zerolog.New(os.Stderr).With().Timestamp().Str("name", "informer").Logger().Level(zerolog.InfoLevel),
-	}, nil
+	}
+
+	informer.client.Logger = &informer.log
+	return informer, nil
 }
 
 func (i *Informer) AddUpstream(u config.Upstream) {
@@ -111,7 +115,7 @@ func (i *Informer) informUpstreams(ctx context.Context, method, endpoint, body s
 }
 
 func (i *Informer) inform(ctx context.Context, headers map[string]string, method, url, body string) error {
-	req, err := http.NewRequestWithContext(ctx, method, url, strings.NewReader(body))
+	req, err := retryablehttp.NewRequestWithContext(ctx, method, url, strings.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP request for %q: %w", url, err)
 	}
@@ -123,7 +127,7 @@ func (i *Informer) inform(ctx context.Context, headers map[string]string, method
 	return i.do(req)
 }
 
-func (i *Informer) do(req *http.Request) error {
+func (i *Informer) do(req *retryablehttp.Request) error {
 	resp, err := i.client.Do(req)
 	if err != nil {
 		if b, e := io.ReadAll(req.Body); e == nil {
