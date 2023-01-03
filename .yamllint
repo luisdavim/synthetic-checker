@@ -1,0 +1,13 @@
+#vim:ft yaml
+
+extends: default
+
+ignore: |
+  charts/*
+
+rules:
+  line-length:
+    max: 225
+    level: warning
+  document-start: disable
+  truthy: disable
