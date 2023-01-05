@@ -160,7 +160,7 @@ informer:
 When running as a service in a k8s cluster, the tool can also watch `Ingress` resources and automatically setup checks for them.
 By default, the tool will setup DNS and connection checks for each ingress. It will check that all the host names resolve and will check if port 443 is reacheable on the ingress's LBs and that the TLS certFile is not about to expire.
 You can annotate your `Ingress` resources to control the checks configuration.
-No HTTP checks willl be create if both the endpoints and the configFrom annotations are missing.
+No HTTP checks willl be created if both the endpoints and the configFrom annotations are missing.
 If the `synthetic-checker/configFrom` annotation is set, and points to a valid secret, but the `synthetic-checker/endpoints` is not, an HTTP check will be set up with an empty endpoint.
 
 ```yaml
@@ -215,6 +215,7 @@ When running in Kubernetes, you have 2 options for running in HA mode.
 - Running multiple independent instances, where each will execute its own checks.
   To use this mode set the `replicaCount` to any number higher than 1
 - Running multiple instances with leader election, were the leader will execute the checks and the followers will sync the results from it.
+  In this mode, the followers will also act as informers for the leader.
   To use this mode set the `replicaCount` to any number higher than 1 and `k8sLeaderElection` to `true`
 
 ## Running as a service
