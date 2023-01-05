@@ -113,7 +113,7 @@ curl -fs -X DELETE "${INFORMER_URL}/checks/http/stat404"
 sleep 1
 status="$(curl -s "${SRV_URL}/" | jq -r '."stat404-http".error')"
 if [[ "${status}" != "null" ]]; then
-  fail "unexpected status: $status; wanted: null"
+  fail2 "unexpected status: $status; wanted: null"
 fi
 echo -e "-- PASS\n"
 
